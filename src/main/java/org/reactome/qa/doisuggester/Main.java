@@ -400,46 +400,13 @@ public class Main
 
 		List<GKInstance> newInstanceEdits = new ArrayList<>();
 
+		// Check the 'reviewed' lists.
 		newInstanceEdits.addAll(findNewInstanceEdits(currentRLE, currentRLEReviewedInstances, previousRLEReviewedInstances, "Reviewed"));
 
 		// Check the 'authored' lists.
-//		for (int i = 0; i < currentRLEAuthoredInstances.size(); i++)
-//		{
-//			GKInstance currentAuthoredIE = currentRLEAuthoredInstances.get(i);
-//			GKInstance previousAuthoredIE = null;
-//			if (previousRLEAuthoredInstances.size() > i)
-//			{
-//				previousAuthoredIE = previousRLEAuthoredInstances.get(i);
-//				if (!currentAuthoredIE.getDBID().equals(previousAuthoredIE.getDBID()))
-//				{
-//					System.out.println("\'Authored\' elements between current and previous versions of instance do not line up for " + currentRLE.getExtendedDisplayName());
-//				}
-//			}
-//			else
-//			{
-//				newInstanceEdits.add(currentAuthoredIE);
-//			}
-//		}
 		newInstanceEdits.addAll(findNewInstanceEdits(currentRLE, currentRLEAuthoredInstances, previousRLEAuthoredInstances, "Authored"));
 		
 		// Check the 'revised' lists.
-//		for (int i = 0; i < currentRLERevisedInstances.size(); i++)
-//		{
-//			GKInstance currentRevisedIE = currentRLERevisedInstances.get(i);
-//			GKInstance previousRevisedIE = null;
-//			if (previousRLERevisedInstances.size() > i)
-//			{
-//				previousRevisedIE = previousRLERevisedInstances.get(i);
-//				if (!currentRevisedIE.getDBID().equals(previousRevisedIE.getDBID()))
-//				{
-//					System.out.println("\'Revised\' elements between current and previous versions of instance do not line up for " + currentRLE.getExtendedDisplayName());
-//				}
-//			}
-//			else
-//			{
-//				newInstanceEdits.add(currentRevisedIE);
-//			}
-//		}
 		newInstanceEdits.addAll(findNewInstanceEdits(currentRLE, currentRLERevisedInstances, previousRLERevisedInstances, "Revised"));
 
 		// Filter the lists so that only non-Reactome IEs are returned.
@@ -454,11 +421,6 @@ public class Main
 			{
 				newNonReactomeInstanceEdits.add(ie);
 			}
-//			else if (!projectText.equals("Reactome"))
-//			{
-//				newNonReactomeInstanceEdits.add(ie);
-//
-//			}
 		}
 		return newNonReactomeInstanceEdits;
 	}
@@ -467,7 +429,6 @@ public class Main
 	{
 		List<GKInstance> newInstanceEdits = new ArrayList<>();
 		
-		// Check the 'reviewed' lists.
 		for (int i = 0; i < currentRLEInstances.size(); i++)
 		{
 			GKInstance currentIE = currentRLEInstances.get(i);
