@@ -309,23 +309,26 @@ public class Main
 
 	private static boolean hasNewInstanceEdit(List<GKInstance> currentRLEInstanceEdits, List<GKInstance> previousRLEInstanceEdits)
 	{
+		boolean newInstanceEdit = false;
 		if (currentRLEInstanceEdits.size() != previousRLEInstanceEdits.size())
 		{
-			return true;
+			newInstanceEdit = true;
 		}
 		else
 		{
-			for (int i = 0; i < currentRLEInstanceEdits.size(); i++)
+			int i = 0;
+			while (i < currentRLEInstanceEdits.size() && !newInstanceEdit)
 			{
 				GKInstance currentIE = currentRLEInstanceEdits.get(i);
 				GKInstance previousIE = previousRLEInstanceEdits.get(i);
 				if (!currentIE.getDBID().equals(previousIE.getDBID()))
 				{
-					return true;
+					newInstanceEdit = true;
 				}
+				i++;
 			}
 		}
-		return false;
+		return newInstanceEdit;
 	}
 
 	private static GKInstance getGrandparentPathwayWithRLEInstanceEdit(GKInstance parentPathway, GKInstance newIE) throws Exception
