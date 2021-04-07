@@ -119,7 +119,9 @@ public class Main
 		List<GKInstance> previousRLERevisedInstances = previousRLE.getAttributeValuesList(ReactomeJavaConstants.revised);
 
 		// Check if any of those attributes have a new instance edit
-		if (hasNewInstanceEdit(currentRLEReviewedInstances, previousRLEReviewedInstances) || hasNewInstanceEdit(currentRLEAuthoredInstances, previousRLEAuthoredInstances) || hasNewInstanceEdit(currentRLERevisedInstances, previousRLERevisedInstances))
+		if (hasNewInstanceEdit(currentRLEReviewedInstances, previousRLEReviewedInstances)
+			|| hasNewInstanceEdit(currentRLEAuthoredInstances, previousRLEAuthoredInstances)
+			|| hasNewInstanceEdit(currentRLERevisedInstances, previousRLERevisedInstances))
 		{
 
 			// Filter out any instance edits (IE) created by someone from Reactome.
@@ -164,37 +166,11 @@ public class Main
 							// {pathway => {reaction:newIE}}
 							if (parentPathwayWithRLEInstanceEdit != null)
 							{
-								Map<GKInstance, GKInstance> reaction2newIE = new HashMap<>();
-								reaction2newIE.put(currentRLE, newIE);
-								// If 'Pathway' key exists, add to it
-								if (pathwaysMap.get(parentPathwayWithRLEInstanceEdit) != null)
-								{
-									pathwaysMap.get(parentPathwayWithRLEInstanceEdit).add(reaction2newIE);
-								}
-								else
-								{
-									// If 'Pathway' key doesn't exist, create it and then add to it.
-									Set<Map<GKInstance, GKInstance>> reaction2newIESet = new HashSet<>(Arrays.asList(reaction2newIE));
-									pathwaysMap.put(parentPathwayWithRLEInstanceEdit, reaction2newIESet);
-								}
+								addPathwayToMap(pathwaysMap, currentRLE, newIE, parentPathwayWithRLEInstanceEdit);
 							}
 							else
 							{
-								// If no Pathways in the hierarchy have the new IE, then the program defaults to
-								// outputting the immediate parent Pathway of the RlE
-								Map<GKInstance, GKInstance> reaction2newIE = new HashMap<>();
-								reaction2newIE.put(currentRLE, newIE);
-								// If 'Pathway' key exists, add to it
-								if (pathwaysMap.get(parentPathway) != null)
-								{
-									pathwaysMap.get(parentPathway).add(reaction2newIE);
-								}
-								else
-								{
-									// If 'Pathway' key doesn't exist, create it and then add to it.
-									Set<Map<GKInstance, GKInstance>> reaction2newIESet = new HashSet<>(Arrays.asList(reaction2newIE));
-									pathwaysMap.put(parentPathway, reaction2newIESet);
-								}
+								addPathwayToMap(pathwaysMap, currentRLE, newIE, parentPathway);
 							}
 						}
 					}
@@ -248,43 +224,33 @@ public class Main
 						// Continue looking up the hierarchy to try and find the HIGHEST Pathway with
 						// the IE.
 						GKInstance grandparentPathwayWithRLEInstanceEdit = getGrandparentPathwayWithRLEInstanceEdit(parentPathway, rleIE);
-						Map<GKInstance, GKInstance> reaction2newIE = new HashMap<>();
-						reaction2newIE.put(newRLE, rleIE);
-						// If 'Pathway' key exists, add to it
-						if (pathwaysMap.get(grandparentPathwayWithRLEInstanceEdit) != null)
-						{
-							pathwaysMap.get(grandparentPathwayWithRLEInstanceEdit).add(reaction2newIE);
-						}
-						else
-						{
-							// If 'Pathway' key doesn't exist, create it and then add to it.
-							Set<Map<GKInstance, GKInstance>> reaction2newIESet = new HashSet<>(Arrays.asList(reaction2newIE));
-							pathwaysMap.put(grandparentPathwayWithRLEInstanceEdit, reaction2newIESet);
-						}
+						addPathwayToMap(pathwaysMap, newRLE, rleIE, grandparentPathwayWithRLEInstanceEdit);
 					}
 					else
 					{
-						// If no IE exists in the immediate Parent, then we don't check up the hierarchy
-						// (correct?), but automatically assume that is the
-						// highest Pathway that needs to be updated.
-						Map<GKInstance, GKInstance> reaction2newIE = new HashMap<>();
-						reaction2newIE.put(newRLE, rleIE);
-						// If 'Pathway' key exists, add to it
-						if (pathwaysMap.get(parentPathway) != null)
-						{
-							pathwaysMap.get(parentPathway).add(reaction2newIE);
-						}
-						else
-						{
-							// If 'Pathway' key doesn't exist, create it and then add to it.
-							Set<Map<GKInstance, GKInstance>> reaction2newIESet = new HashSet<>(Arrays.asList(reaction2newIE));
-							pathwaysMap.put(parentPathway, reaction2newIESet);
-						}
+						addPathwayToMap(pathwaysMap, newRLE, rleIE, parentPathway);
 					}
 				}
 			}
 		}
 		return pathwaysMap;
+	}
+
+	private static void addPathwayToMap(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwaysMap, GKInstance newRLE, GKInstance rleIE, GKInstance grandparentPathwayWithRLEInstanceEdit)
+	{
+		Map<GKInstance, GKInstance> reaction2newIE = new HashMap<>();
+		reaction2newIE.put(newRLE, rleIE);
+		// If 'Pathway' key exists, add to it
+		if (pathwaysMap.get(grandparentPathwayWithRLEInstanceEdit) != null)
+		{
+			pathwaysMap.get(grandparentPathwayWithRLEInstanceEdit).add(reaction2newIE);
+		}
+		else
+		{
+			// If 'Pathway' key doesn't exist, create it and then add to it.
+			Set<Map<GKInstance, GKInstance>> reaction2newIESet = new HashSet<>(Arrays.asList(reaction2newIE));
+			pathwaysMap.put(grandparentPathwayWithRLEInstanceEdit, reaction2newIESet);
+		}
 	}
 
 	private static void printOutput(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs) throws InvalidAttributeException, Exception
