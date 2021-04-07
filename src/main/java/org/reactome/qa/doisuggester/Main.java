@@ -25,8 +25,13 @@ public class Main
 {
 	public static void main(String[] args) throws FileNotFoundException, IOException
 	{
+		System.out.println("Running...");
 		String pathToConfig = Paths.get("src", "main", "resources", "config.properties").toString();
-		String username, password, database, databasePrev, host;
+		String username;
+		String password;
+		String database;
+		String databasePrev;
+		String host;
 		int port;
 		try(FileInputStream fis = new FileInputStream(pathToConfig))
 		{
@@ -50,7 +55,9 @@ public class Main
 			Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs = new HashMap<>();
 
 			// Iterate through all ReactionlikeEvents (RlEs) in the 'current' test_reactome
-			for (GKInstance currentRLE : (Collection<GKInstance>) dbAdaptor.fetchInstancesByClass(ReactomeJavaConstants.ReactionlikeEvent))
+			Collection<GKInstance> RLEs = (Collection<GKInstance>) dbAdaptor.fetchInstancesByClass(ReactomeJavaConstants.ReactionlikeEvent);
+			System.out.println(RLEs.size() + " Reaction-like events will be checked.");
+			for (GKInstance currentRLE : RLEs)
 			{
 
 				// Only check RlEs that are not found in the 'inferredFrom' of any instances.
@@ -272,6 +279,7 @@ public class Main
 		// - automatedDOIs.dbName=test_slice_20210118
 		// - automatedDOIs.prevDbName=slice_previous_as_74
 
+		System.out.println(pathway2Reactions2NewIEs.keySet().size() + " DOI suggestions");
 		System.out.println("PathwayToBeUpdated\tUpdatedReactionsCount\tUpdatedReactions\tNewInstanceEdits\tMostRecentModified");
 		for (GKInstance pathway : pathway2Reactions2NewIEs.keySet())
 		{
@@ -392,62 +400,47 @@ public class Main
 
 		List<GKInstance> newInstanceEdits = new ArrayList<>();
 
-		// Check the 'reviewed' lists.
-		for (int i = 0; i < currentRLEReviewedInstances.size(); i++)
-		{
-			GKInstance currentReviewedIE = currentRLEReviewedInstances.get(i);
-			GKInstance previousReviewedIE = null;
-			if (previousRLEReviewedInstances.size() > i)
-			{
-				previousReviewedIE = previousRLEReviewedInstances.get(i);
-				if (!currentReviewedIE.getDBID().equals(previousReviewedIE.getDBID()))
-				{
-					System.out.println("\'Reviewed\' elements between current and previous versions of instance do not line up for " + currentRLE.getExtendedDisplayName());
-				}
-			}
-			else
-			{
-				newInstanceEdits.add(currentReviewedIE);
-			}
-		}
+		newInstanceEdits.addAll(findNewInstanceEdits(currentRLE, currentRLEReviewedInstances, previousRLEReviewedInstances, "Reviewed"));
 
 		// Check the 'authored' lists.
-		for (int i = 0; i < currentRLEAuthoredInstances.size(); i++)
-		{
-			GKInstance currentAuthoredIE = currentRLEAuthoredInstances.get(i);
-			GKInstance previousAuthoredIE = null;
-			if (previousRLEAuthoredInstances.size() > i)
-			{
-				previousAuthoredIE = previousRLEAuthoredInstances.get(i);
-				if (!currentAuthoredIE.getDBID().equals(previousAuthoredIE.getDBID()))
-				{
-					System.out.println("\'Authored\' elements between current and previous versions of instance do not line up for " + currentRLE.getExtendedDisplayName());
-				}
-			}
-			else
-			{
-				newInstanceEdits.add(currentAuthoredIE);
-			}
-		}
-
+//		for (int i = 0; i < currentRLEAuthoredInstances.size(); i++)
+//		{
+//			GKInstance currentAuthoredIE = currentRLEAuthoredInstances.get(i);
+//			GKInstance previousAuthoredIE = null;
+//			if (previousRLEAuthoredInstances.size() > i)
+//			{
+//				previousAuthoredIE = previousRLEAuthoredInstances.get(i);
+//				if (!currentAuthoredIE.getDBID().equals(previousAuthoredIE.getDBID()))
+//				{
+//					System.out.println("\'Authored\' elements between current and previous versions of instance do not line up for " + currentRLE.getExtendedDisplayName());
+//				}
+//			}
+//			else
+//			{
+//				newInstanceEdits.add(currentAuthoredIE);
+//			}
+//		}
+		newInstanceEdits.addAll(findNewInstanceEdits(currentRLE, currentRLEAuthoredInstances, previousRLEAuthoredInstances, "Authored"));
+		
 		// Check the 'revised' lists.
-		for (int i = 0; i < currentRLERevisedInstances.size(); i++)
-		{
-			GKInstance currentRevisedIE = currentRLERevisedInstances.get(i);
-			GKInstance previousRevisedIE = null;
-			if (previousRLERevisedInstances.size() > i)
-			{
-				previousRevisedIE = previousRLERevisedInstances.get(i);
-				if (!currentRevisedIE.getDBID().equals(previousRevisedIE.getDBID()))
-				{
-					System.out.println("\'Revised\' elements between current and previous versions of instance do not line up for " + currentRLE.getExtendedDisplayName());
-				}
-			}
-			else
-			{
-				newInstanceEdits.add(currentRevisedIE);
-			}
-		}
+//		for (int i = 0; i < currentRLERevisedInstances.size(); i++)
+//		{
+//			GKInstance currentRevisedIE = currentRLERevisedInstances.get(i);
+//			GKInstance previousRevisedIE = null;
+//			if (previousRLERevisedInstances.size() > i)
+//			{
+//				previousRevisedIE = previousRLERevisedInstances.get(i);
+//				if (!currentRevisedIE.getDBID().equals(previousRevisedIE.getDBID()))
+//				{
+//					System.out.println("\'Revised\' elements between current and previous versions of instance do not line up for " + currentRLE.getExtendedDisplayName());
+//				}
+//			}
+//			else
+//			{
+//				newInstanceEdits.add(currentRevisedIE);
+//			}
+//		}
+		newInstanceEdits.addAll(findNewInstanceEdits(currentRLE, currentRLERevisedInstances, previousRLERevisedInstances, "Revised"));
 
 		// Filter the lists so that only non-Reactome IEs are returned.
 		List<GKInstance> newNonReactomeInstanceEdits = new ArrayList<>();
@@ -457,17 +450,42 @@ public class Main
 			// TODO: Iterate through all authors
 			GKInstance personInst = (GKInstance) ie.getAttributeValue(ReactomeJavaConstants.author);
 			String projectText = (String) personInst.getAttributeValue("project");
-			if (projectText == null)
+			if (projectText == null || !projectText.equals("Reactome"))
 			{
 				newNonReactomeInstanceEdits.add(ie);
 			}
-			else if (!projectText.equals("Reactome"))
-			{
-				newNonReactomeInstanceEdits.add(ie);
-
-			}
+//			else if (!projectText.equals("Reactome"))
+//			{
+//				newNonReactomeInstanceEdits.add(ie);
+//
+//			}
 		}
 		return newNonReactomeInstanceEdits;
+	}
+
+	private static List<GKInstance> findNewInstanceEdits(GKInstance currentRLE, List<GKInstance> currentRLEInstances, List<GKInstance> previousRLEInstances, String listType)
+	{
+		List<GKInstance> newInstanceEdits = new ArrayList<>();
+		
+		// Check the 'reviewed' lists.
+		for (int i = 0; i < currentRLEInstances.size(); i++)
+		{
+			GKInstance currentIE = currentRLEInstances.get(i);
+			GKInstance previousIE = null;
+			if (previousRLEInstances.size() > i)
+			{
+				previousIE = previousRLEInstances.get(i);
+				if (!currentIE.getDBID().equals(previousIE.getDBID()))
+				{
+					System.out.println("\'" + listType + "\' elements between current and previous versions of instance do not line up for " + currentRLE.getExtendedDisplayName());
+				}
+			}
+			else
+			{
+				newInstanceEdits.add(currentIE);
+			}
+		}
+		return newInstanceEdits;
 	}
 
 	private static boolean hasRLEInstanceEdit(GKInstance newIE, GKInstance parentPathwayIE)
