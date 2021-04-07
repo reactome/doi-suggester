@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
@@ -268,8 +269,9 @@ public class Main
 		System.out.println(pathway2Reactions2NewIEs.keySet().size() + " DOI suggestions");
 		// TODO: Replace this with proper CSV output to file.
 		System.out.println("PathwayToBeUpdated\tUpdatedReactionsCount\tUpdatedReactions\tNewInstanceEdits\tMostRecentModified");
-		for (GKInstance pathway : pathway2Reactions2NewIEs.keySet())
+		for (Entry<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwayEntry : pathway2Reactions2NewIEs.entrySet())
 		{
+			GKInstance pathway = pathwayEntry.getKey();
 			List<String> rleDbIds = new ArrayList<>();
 			List<String> rleDisplayNames = new ArrayList<>();
 			List<String> ieDbIds = new ArrayList<>();
@@ -277,7 +279,7 @@ public class Main
 			List<String> rles = new ArrayList<>();
 			List<String> ies = new ArrayList<>();
 
-			for (Map<GKInstance, GKInstance> rle2newIE : pathway2Reactions2NewIEs.get(pathway))
+			for (Map<GKInstance, GKInstance> rle2newIE : pathwayEntry.getValue())
 			{
 				rleDbIds.add(rle2newIE.keySet().iterator().next().getDBID().toString());
 				rleDisplayNames.add(rle2newIE.keySet().iterator().next().getDisplayName());
