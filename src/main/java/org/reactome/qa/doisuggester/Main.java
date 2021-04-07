@@ -330,43 +330,44 @@ public class Main
 
 	private static GKInstance getGrandparentPathwayWithRLEInstanceEdit(GKInstance parentPathway, GKInstance newIE) throws Exception
 	{
+		GKInstance pathway = null;
 		List<GKInstance> grandparentPathways = (List<GKInstance>) parentPathway.getReferers(ReactomeJavaConstants.hasEvent);
-		if (grandparentPathways == null)
+		if (grandparentPathways != null)
 		{
-			return null;
-		}
-		// This never came up in my testing, but if it does, might need to be accounted
-		// for.
-		if (grandparentPathways.size() > 1)
-		{
-			System.out.println("TOO MANY PARENTS");
-			System.exit(0);
-		}
-		GKInstance grandparentPathway = grandparentPathways.get(0);
-		List<GKInstance> grandparentPathwayReviewedAuthoredRevisedInstances = grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.reviewed);
-		grandparentPathwayReviewedAuthoredRevisedInstances.addAll(grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.authored));
-		grandparentPathwayReviewedAuthoredRevisedInstances.addAll(grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.revised));
-		boolean hasRLEInstanceEdit = false;
-		for (GKInstance grandparentPathwayIE : grandparentPathwayReviewedAuthoredRevisedInstances)
-		{
-			if (newIE.getDBID().equals(grandparentPathwayIE.getDBID()))
+			// This never came up in my testing, but if it does, might need to be accounted
+			// for.
+			if (grandparentPathways.size() > 1)
 			{
-				hasRLEInstanceEdit = true;
+				System.out.println("TOO MANY ANCESTORS");
+				System.exit(0);
+			}
+			GKInstance grandparentPathway = grandparentPathways.get(0);
+			List<GKInstance> grandparentPathwayReviewedAuthoredRevisedInstances = grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.reviewed);
+			grandparentPathwayReviewedAuthoredRevisedInstances.addAll(grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.authored));
+			grandparentPathwayReviewedAuthoredRevisedInstances.addAll(grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.revised));
+			boolean hasRLEInstanceEdit = false;
+			for (GKInstance grandparentPathwayIE : grandparentPathwayReviewedAuthoredRevisedInstances)
+			{
+				if (newIE.getDBID().equals(grandparentPathwayIE.getDBID()))
+				{
+					hasRLEInstanceEdit = true;
+				}
+			}
+
+			if (hasRLEInstanceEdit)
+			{
+				// Pathway has the IE, but might not be the highest level. Recursively check
+				// upwards!
+				pathway = getGrandparentPathwayWithRLEInstanceEdit(grandparentPathway, newIE);
+			}
+			else
+			{
+				// Pathway does not have the IE, and according to proper rules, that should be
+				// the the highest Pathway, so it is returned.
+				pathway = parentPathway;
 			}
 		}
-
-		if (hasRLEInstanceEdit)
-		{
-			// Pathway has the IE, but might not be the highest level. Recursively check
-			// upwards!
-			return getGrandparentPathwayWithRLEInstanceEdit(grandparentPathway, newIE);
-		}
-		else
-		{
-			// Pathway does not have the IE, and according to proper rules, that should be
-			// the the highest Pathway, so it is returned.
-			return parentPathway;
-		}
+		return pathway;
 	}
 
 	private static List<GKInstance> getNonReactomeEventIEs(GKInstance event) throws Exception
