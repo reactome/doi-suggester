@@ -383,11 +383,7 @@ public class Main
 			// TODO: Iterate through all authors
 			GKInstance personInst = (GKInstance) ie.getAttributeValue(ReactomeJavaConstants.author);
 			String projectText = (String) personInst.getAttributeValue("project");
-			if (projectText == null)
-			{
-				newNonReactomeInstanceEdits.add(ie);
-			}
-			else if (!projectText.equals("Reactome"))
+			if (projectText == null || !projectText.equals("Reactome"))
 			{
 				newNonReactomeInstanceEdits.add(ie);
 			}
