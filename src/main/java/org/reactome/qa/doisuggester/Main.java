@@ -25,7 +25,7 @@ public class Main
 {
 	public static void main(String[] args) throws FileNotFoundException, IOException
 	{
-		System.out.println("Running...");
+		System.out.println("Checking for RLEs that might need a DOI...");
 		String pathToConfig = Paths.get("src", "main", "resources", "config.properties").toString();
 		String username;
 		String password;
@@ -37,7 +37,7 @@ public class Main
 		{
 			Properties props = new Properties();
 			props.load(fis);
-	
+			// TODO: Add proper validation of properties.
 			username = props.getProperty("automatedDOIs.user");
 			password = props.getProperty("automatedDOIs.password");
 			database = props.getProperty("automatedDOIs.dbName");
@@ -266,6 +266,7 @@ public class Main
 		// - automatedDOIs.prevDbName=slice_previous_as_74
 
 		System.out.println(pathway2Reactions2NewIEs.keySet().size() + " DOI suggestions");
+		// TODO: Replace this with proper CSV output to file.
 		System.out.println("PathwayToBeUpdated\tUpdatedReactionsCount\tUpdatedReactions\tNewInstanceEdits\tMostRecentModified");
 		for (GKInstance pathway : pathway2Reactions2NewIEs.keySet())
 		{
@@ -295,7 +296,10 @@ public class Main
 
 	private static boolean hasNewInstanceEdit(List<GKInstance> currentRLEInstanceEdits, List<GKInstance> previousRLEInstanceEdits)
 	{
+		// start by assuming false and set to true when conditions require it.
 		boolean newInstanceEdit = false;
+		// I guess Justin assumed that if there are more InstanceEdits of the current version of an object, the it *must* be new.
+		// This is *probably* a safe assumption to make.
 		if (currentRLEInstanceEdits.size() != previousRLEInstanceEdits.size())
 		{
 			newInstanceEdit = true;
@@ -307,6 +311,9 @@ public class Main
 			{
 				GKInstance currentIE = currentRLEInstanceEdits.get(i);
 				GKInstance previousIE = previousRLEInstanceEdits.get(i);
+				// It seems that in the case where current and previous versions have the same
+				// number of InstanceEdits, comparing DBIDs indicates if an InstanceEdit is new.
+				// I'm assuming Justin tested this theory more rigorously.
 				if (!currentIE.getDBID().equals(previousIE.getDBID()))
 				{
 					newInstanceEdit = true;
