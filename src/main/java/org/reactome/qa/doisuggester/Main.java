@@ -79,98 +79,7 @@ public class Main
 					}
 					else // process RLEs that have prior versions.
 					{
-						// Get all reviewed, authored, and revised values from the current and previous
-						// version of the RlE.
-						List<GKInstance> currentRLEReviewedInstances = currentRLE.getAttributeValuesList(ReactomeJavaConstants.reviewed);
-						List<GKInstance> currentRLEAuthoredInstances = currentRLE.getAttributeValuesList(ReactomeJavaConstants.authored);
-						List<GKInstance> currentRLERevisedInstances = currentRLE.getAttributeValuesList(ReactomeJavaConstants.revised);
-						List<GKInstance> previousRLEReviewedInstances = previousRLE.getAttributeValuesList(ReactomeJavaConstants.reviewed);
-						List<GKInstance> previousRLEAuthoredInstances = previousRLE.getAttributeValuesList(ReactomeJavaConstants.authored);
-						List<GKInstance> previousRLERevisedInstances = previousRLE.getAttributeValuesList(ReactomeJavaConstants.revised);
-
-						// Check if any of those attributes have a new instance edit
-						if (hasNewInstanceEdit(currentRLEReviewedInstances, previousRLEReviewedInstances) || hasNewInstanceEdit(currentRLEAuthoredInstances, previousRLEAuthoredInstances) || hasNewInstanceEdit(currentRLERevisedInstances, previousRLERevisedInstances))
-						{
-
-							// Filter out any instance edits (IE) created by someone from Reactome.
-							// This is because Pathways are only officially considered updated once they are
-							// reviewed by an external person.
-							List<GKInstance> newInstanceEdits = getNewNonReactomeInstanceEdits(currentRLE, currentRLEReviewedInstances, currentRLEAuthoredInstances, currentRLERevisedInstances, previousRLEReviewedInstances, previousRLEAuthoredInstances, currentRLERevisedInstances);
-
-							if (!newInstanceEdits.isEmpty())
-							{
-								// Now it will check the immediate parent Pathway of the RlE to see if the new
-								// IE exists there.
-								// If it is not found, it will continue to check up the Pathway hierarchy to see
-								// if a new IE exists anywhere.
-
-								// Note: Expand so that instances with multiple parents are handled.
-								GKInstance parentPathway = (GKInstance) currentRLE.getReferers(ReactomeJavaConstants.hasEvent).iterator().next();
-								List<GKInstance> parentPathwayReviewedAuthoredRevisedInstances = parentPathway.getAttributeValuesList(ReactomeJavaConstants.reviewed);
-								parentPathwayReviewedAuthoredRevisedInstances.addAll(parentPathway.getAttributeValuesList(ReactomeJavaConstants.authored));
-								parentPathwayReviewedAuthoredRevisedInstances.addAll(parentPathway.getAttributeValuesList(ReactomeJavaConstants.revised));
-
-								for (GKInstance newIE : newInstanceEdits)
-								{
-									for (GKInstance parentPathwayIE : parentPathwayReviewedAuthoredRevisedInstances)
-									{
-
-										// At time of writing, no 'existing' RlEs have a new IE in the immediate parent
-										// when using
-										// 'test_slice_20210118' as the current DB, and 'slice_previous_as_74' as the
-										// previous DB.
-										if (hasRLEInstanceEdit(newIE, parentPathwayIE))
-										{
-											System.out.println("This IE exists in immediate parent Pathway");
-										}
-										else
-										{
-
-											// Since the new IE wasn't found in the immediate parent, check up the Pathway
-											// hierarchy.
-											GKInstance parentPathwayWithRLEInstanceEdit = getGrandparentPathwayWithRLEInstanceEdit(parentPathway, newIE);
-
-											// If a Pathway with the IE was found, it is added to a map organized as
-											// {pathway => {reaction:newIE}}
-											if (parentPathwayWithRLEInstanceEdit != null)
-											{
-												Map<GKInstance, GKInstance> reaction2newIE = new HashMap<>();
-												reaction2newIE.put(currentRLE, newIE);
-												// If 'Pathway' key exists, add to it
-												if (pathway2Reactions2NewIEs.get(parentPathwayWithRLEInstanceEdit) != null)
-												{
-													pathway2Reactions2NewIEs.get(parentPathwayWithRLEInstanceEdit).add(reaction2newIE);
-												}
-												else
-												{
-													// If 'Pathway' key doesn't exist, create it and then add to it.
-													Set<Map<GKInstance, GKInstance>> reaction2newIESet = new HashSet<>(Arrays.asList(reaction2newIE));
-													pathway2Reactions2NewIEs.put(parentPathwayWithRLEInstanceEdit, reaction2newIESet);
-												}
-											}
-											else
-											{
-												// If no Pathways in the hierarchy have the new IE, then the program defaults to
-												// outputting the immediate parent Pathway of the RlE
-												Map<GKInstance, GKInstance> reaction2newIE = new HashMap<>();
-												reaction2newIE.put(currentRLE, newIE);
-												// If 'Pathway' key exists, add to it
-												if (pathway2Reactions2NewIEs.get(parentPathway) != null)
-												{
-													pathway2Reactions2NewIEs.get(parentPathway).add(reaction2newIE);
-												}
-												else
-												{
-													// If 'Pathway' key doesn't exist, create it and then add to it.
-													Set<Map<GKInstance, GKInstance>> reaction2newIESet = new HashSet<>(Arrays.asList(reaction2newIE));
-													pathway2Reactions2NewIEs.put(parentPathway, reaction2newIESet);
-												}
-											}
-										}
-									}
-								}
-							}
-						}
+						pathway2Reactions2NewIEs = processPreexistingRLEs(pathway2Reactions2NewIEs, currentRLE, previousRLE);
 					}
 					
 				}
@@ -197,11 +106,108 @@ public class Main
 		}
 	}
 
+	private static Map<GKInstance, Set<Map<GKInstance, GKInstance>>> processPreexistingRLEs(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs, GKInstance currentRLE, GKInstance previousRLE) throws InvalidAttributeException, Exception
+	{
+		Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwaysMap = pathway2Reactions2NewIEs;
+		// Get all reviewed, authored, and revised values from the current and previous
+		// version of the RlE.
+		List<GKInstance> currentRLEReviewedInstances = currentRLE.getAttributeValuesList(ReactomeJavaConstants.reviewed);
+		List<GKInstance> currentRLEAuthoredInstances = currentRLE.getAttributeValuesList(ReactomeJavaConstants.authored);
+		List<GKInstance> currentRLERevisedInstances = currentRLE.getAttributeValuesList(ReactomeJavaConstants.revised);
+		List<GKInstance> previousRLEReviewedInstances = previousRLE.getAttributeValuesList(ReactomeJavaConstants.reviewed);
+		List<GKInstance> previousRLEAuthoredInstances = previousRLE.getAttributeValuesList(ReactomeJavaConstants.authored);
+		List<GKInstance> previousRLERevisedInstances = previousRLE.getAttributeValuesList(ReactomeJavaConstants.revised);
+
+		// Check if any of those attributes have a new instance edit
+		if (hasNewInstanceEdit(currentRLEReviewedInstances, previousRLEReviewedInstances) || hasNewInstanceEdit(currentRLEAuthoredInstances, previousRLEAuthoredInstances) || hasNewInstanceEdit(currentRLERevisedInstances, previousRLERevisedInstances))
+		{
+
+			// Filter out any instance edits (IE) created by someone from Reactome.
+			// This is because Pathways are only officially considered updated once they are
+			// reviewed by an external person.
+			List<GKInstance> newInstanceEdits = getNewNonReactomeInstanceEdits(currentRLE, currentRLEReviewedInstances, currentRLEAuthoredInstances, currentRLERevisedInstances, previousRLEReviewedInstances, previousRLEAuthoredInstances, currentRLERevisedInstances);
+
+			if (!newInstanceEdits.isEmpty())
+			{
+				// Now it will check the immediate parent Pathway of the RlE to see if the new
+				// IE exists there.
+				// If it is not found, it will continue to check up the Pathway hierarchy to see
+				// if a new IE exists anywhere.
+
+				// Note: Expand so that instances with multiple parents are handled.
+				GKInstance parentPathway = (GKInstance) currentRLE.getReferers(ReactomeJavaConstants.hasEvent).iterator().next();
+				List<GKInstance> parentPathwayReviewedAuthoredRevisedInstances = parentPathway.getAttributeValuesList(ReactomeJavaConstants.reviewed);
+				parentPathwayReviewedAuthoredRevisedInstances.addAll(parentPathway.getAttributeValuesList(ReactomeJavaConstants.authored));
+				parentPathwayReviewedAuthoredRevisedInstances.addAll(parentPathway.getAttributeValuesList(ReactomeJavaConstants.revised));
+
+				for (GKInstance newIE : newInstanceEdits)
+				{
+					for (GKInstance parentPathwayIE : parentPathwayReviewedAuthoredRevisedInstances)
+					{
+
+						// At time of writing, no 'existing' RlEs have a new IE in the immediate parent
+						// when using
+						// 'test_slice_20210118' as the current DB, and 'slice_previous_as_74' as the
+						// previous DB.
+						if (hasRLEInstanceEdit(newIE, parentPathwayIE))
+						{
+							System.out.println("This IE exists in immediate parent Pathway");
+						}
+						else
+						{
+
+							// Since the new IE wasn't found in the immediate parent, check up the Pathway
+							// hierarchy.
+							GKInstance parentPathwayWithRLEInstanceEdit = getGrandparentPathwayWithRLEInstanceEdit(parentPathway, newIE);
+
+							// If a Pathway with the IE was found, it is added to a map organized as
+							// {pathway => {reaction:newIE}}
+							if (parentPathwayWithRLEInstanceEdit != null)
+							{
+								Map<GKInstance, GKInstance> reaction2newIE = new HashMap<>();
+								reaction2newIE.put(currentRLE, newIE);
+								// If 'Pathway' key exists, add to it
+								if (pathwaysMap.get(parentPathwayWithRLEInstanceEdit) != null)
+								{
+									pathwaysMap.get(parentPathwayWithRLEInstanceEdit).add(reaction2newIE);
+								}
+								else
+								{
+									// If 'Pathway' key doesn't exist, create it and then add to it.
+									Set<Map<GKInstance, GKInstance>> reaction2newIESet = new HashSet<>(Arrays.asList(reaction2newIE));
+									pathwaysMap.put(parentPathwayWithRLEInstanceEdit, reaction2newIESet);
+								}
+							}
+							else
+							{
+								// If no Pathways in the hierarchy have the new IE, then the program defaults to
+								// outputting the immediate parent Pathway of the RlE
+								Map<GKInstance, GKInstance> reaction2newIE = new HashMap<>();
+								reaction2newIE.put(currentRLE, newIE);
+								// If 'Pathway' key exists, add to it
+								if (pathwaysMap.get(parentPathway) != null)
+								{
+									pathwaysMap.get(parentPathway).add(reaction2newIE);
+								}
+								else
+								{
+									// If 'Pathway' key doesn't exist, create it and then add to it.
+									Set<Map<GKInstance, GKInstance>> reaction2newIESet = new HashSet<>(Arrays.asList(reaction2newIE));
+									pathwaysMap.put(parentPathway, reaction2newIESet);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return pathwaysMap;
+	}
+
 	private static Map<GKInstance, Set<Map<GKInstance, GKInstance>>> processNewRLEs(Set<GKInstance> newRLEs, Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs) throws Exception
 	{
-		Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwaysMap = new HashMap<>();
 		
-		pathwaysMap = pathway2Reactions2NewIEs;
+		Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwaysMap = pathway2Reactions2NewIEs;
 		
 		// For cases where this the first Release that a RlE has appeared (ie. fetching
 		// for the RlE in the previous DB returned null).
