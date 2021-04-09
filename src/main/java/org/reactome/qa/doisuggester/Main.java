@@ -22,6 +22,7 @@ import org.gk.model.GKInstance;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.InvalidAttributeException;
 
+
 public class Main
 {
 	public static void main(String[] args) throws FileNotFoundException, IOException
@@ -45,10 +46,6 @@ public class Main
 			databasePrev = props.getProperty("automatedDOIs.prevDbName");
 			host = props.getProperty("automatedDOIs.host");
 			port = Integer.valueOf(props.getProperty("automatedDOIs.port"));
-		}
-		
-		try
-		{
 			MySQLAdaptor dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 			MySQLAdaptor dbAdaptorPrev = new MySQLAdaptor(host, databasePrev, username, password, port);
 
@@ -375,6 +372,12 @@ public class Main
 		instanceEdits.addAll(event.getAttributeValuesList(ReactomeJavaConstants.authored));
 		instanceEdits.addAll(event.getAttributeValuesList(ReactomeJavaConstants.revised));
 
+		List<GKInstance> newNonReactomeInstanceEdits = getNonReactomeIEs(instanceEdits);
+		return newNonReactomeInstanceEdits;
+	}
+
+	private static List<GKInstance> getNonReactomeIEs(List<GKInstance> instanceEdits) throws InvalidAttributeException, Exception
+	{
 		List<GKInstance> newNonReactomeInstanceEdits = new ArrayList<>();
 		for (GKInstance ie : instanceEdits)
 		{
@@ -405,18 +408,8 @@ public class Main
 		newInstanceEdits.addAll(findNewInstanceEdits(currentRLE, currentRLERevisedInstances, previousRLERevisedInstances, "Revised"));
 
 		// Filter the lists so that only non-Reactome IEs are returned.
-		List<GKInstance> newNonReactomeInstanceEdits = new ArrayList<>();
-		for (GKInstance ie : newInstanceEdits)
-		{
-			// 'project' is single-value variable
-			// TODO: Iterate through all authors
-			GKInstance personInst = (GKInstance) ie.getAttributeValue(ReactomeJavaConstants.author);
-			String projectText = (String) personInst.getAttributeValue("project");
-			if (projectText == null || !projectText.equals("Reactome"))
-			{
-				newNonReactomeInstanceEdits.add(ie);
-			}
-		}
+
+		List<GKInstance> newNonReactomeInstanceEdits = getNonReactomeIEs(newInstanceEdits);
 		return newNonReactomeInstanceEdits;
 	}
 
