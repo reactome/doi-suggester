@@ -15,13 +15,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 
 import org.gk.model.GKInstance;
 import org.gk.persistence.MySQLAdaptor;
 import org.gk.schema.InvalidAttributeException;
-
+import org.reactome.util.general.MandatoryProperties;
+import org.reactome.util.general.MandatoryProperties.PropertyHasNoValueException;
+import org.reactome.util.general.MandatoryProperties.PropertyNotPresentException;
 
 public class Main
 {
@@ -37,15 +38,15 @@ public class Main
 		int port;
 		try(FileInputStream fis = new FileInputStream(pathToConfig))
 		{
-			Properties props = new Properties();
+			MandatoryProperties props = new MandatoryProperties();
 			props.load(fis);
-			// TODO: Add proper validation of properties.
-			username = props.getProperty("automatedDOIs.user");
-			password = props.getProperty("automatedDOIs.password");
-			database = props.getProperty("automatedDOIs.dbName");
-			databasePrev = props.getProperty("automatedDOIs.prevDbName");
-			host = props.getProperty("automatedDOIs.host");
-			port = Integer.valueOf(props.getProperty("automatedDOIs.port"));
+
+			username = props.getMandatoryProperty("automatedDOIs.user");
+			password = props.getMandatoryProperty("automatedDOIs.password");
+			database = props.getMandatoryProperty("automatedDOIs.dbName");
+			databasePrev = props.getMandatoryProperty("automatedDOIs.prevDbName");
+			host = props.getMandatoryProperty("automatedDOIs.host");
+			port = Integer.valueOf(props.getMandatoryProperty("automatedDOIs.port"));
 			MySQLAdaptor dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 			MySQLAdaptor dbAdaptorPrev = new MySQLAdaptor(host, databasePrev, username, password, port);
 
@@ -87,6 +88,12 @@ public class Main
 
 			printOutput(pathwaysMap);
 
+		}
+		catch (PropertyHasNoValueException | PropertyNotPresentException e)
+		{
+			System.err.println("Your properties file appears to be misconfigured: " + e.getMessage());
+			e.printStackTrace();
+			System.exit(-1);
 		}
 		catch (SQLException e)
 		{
