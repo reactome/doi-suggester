@@ -77,18 +77,14 @@ public class DOISuggesterMain
 						for (String rleKey : s.getRlesToInstanceEdits().keySet())
 						{
 							String instanceEdits = s.getRlesToInstanceEdits().get(rleKey).stream().reduce("", String::join) + "|";
-						
-							suggestions.computeIfAbsent(pathway, x -> rleKey + " " + instanceEdits + "\n");
-							
+							String rleLine = rleKey + " " + instanceEdits + "\n";
 							if (suggestions.containsKey(pathway))
 							{
-								
-								suggestions.put(pathway, suggestions.get(pathway) + " " + rleKey + " " + instanceEdits + ")\n");
-							
+								suggestions.put(pathway, suggestions.get(pathway) + " " + rleLine);	
 							}
 							else
 							{
-								suggestions.put(pathway, rleKey + " " + instanceEdits + "\n");
+								suggestions.put(pathway, rleLine);
 							}
 						}
 					}
