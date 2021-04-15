@@ -67,14 +67,6 @@ public class DOISuggesterMain
 				// Ignore inferred RLEs
 				if (currentRLE.getReferers(ReactomeJavaConstants.inferredFrom) == null)
 				{
-					// Just a quick check: how many RLEs have > 1 parent via hasEvent?
-					List<GKInstance> parents = (List<GKInstance>) currentRLE.getReferers(ReactomeJavaConstants.hasEvent);
-//					if (parents != null && parents.size() > 1)
-//					{
-//						System.out.println("More than 1 parent: " + currentRLE.toString() + " has " + parents.size());
-//					}
-					
-					
 					ReactionlikeEvent rle = new ReactionlikeEvent(currentRLE, dbAdaptorPrev);
 					Suggester suggester = new Suggester(rle);
 					Set<Suggestion> rleSuggestions = suggester.getSuggestion();
@@ -100,18 +92,10 @@ public class DOISuggesterMain
 							}
 						}
 					}
-					
-//					if (suggestion != null && !suggestion.trim().equals(""))
-//					{
-//						System.out.println(suggestion);
-//					}
 				}
 			}
 			System.out.println(suggestions.size() + " top-level pathways have suggestions under them.");
-//			for (Entry<String, String> entry : suggestions.entrySet())
-//			{
-//				System.out.println(entry.getKey() + "\t" + entry.getValue());
-//			}
+
 			try (CSVPrinter printer = new CSVPrinter(new FileWriter(new File("doi-suggestions.csv")), CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL)))
 			{
 				for (Entry<String, String> entry : suggestions.entrySet())

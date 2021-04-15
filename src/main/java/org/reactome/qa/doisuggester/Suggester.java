@@ -82,7 +82,6 @@ public class Suggester
 		}
 		
 
-//		StringBuilder sb = new StringBuilder();
 		if (!pathways.isEmpty())
 		{
 			for (GKInstance pathway : pathways)
@@ -93,14 +92,9 @@ public class Suggester
 				rleMapToInstanceEdits.put(this.rle.getUnderlyingInstance().toString(), suggestedInstanceEdits);
 				s.setRlesToInstanceEdits(rleMapToInstanceEdits);
 				suggestions.add(s);
-//				sb.append(pathway.toString()).append("\t")
-//					.append(rle.getUnderlyingInstance().toString()).append("\t")
-//					.append(rle.getNewInstanceEdits().stream().map(GKInstance::toString).reduce("", String::join));
 			}	
 		}
 		return suggestions;
-//		suggestion = sb.toString();
-//		return suggestion;
 	}
 
 	private Set<GKInstance> getPathways(List<GKInstance> newInstanceEdits)

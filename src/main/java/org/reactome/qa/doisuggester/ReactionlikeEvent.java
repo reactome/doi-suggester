@@ -33,38 +33,6 @@ public class ReactionlikeEvent
 	
 	private Set<GKInstance> ancestors = new HashSet<>();
 	
-//	private static Comparator<? super GKInstance> instanceEditComparator = new Comparator<GKInstance>()
-//		{
-//			@Override
-//			public int compare(GKInstance instanceEdit, GKInstance other) throws RuntimeException
-//			{
-//				try
-//				{
-//					String instanceEditDateTime = (String) instanceEdit.getAttributeValue(ReactomeJavaConstants.dateTime);
-//					// not all date strings have milliseconds and this cauess problems when trying to format the
-//					// strings, so easier to just remove the millisecond parts.
-//					instanceEditDateTime = instanceEditDateTime.replaceAll("\\.[0-9]+$", "");
-//					String otherDateTime = (String) instanceEdit.getAttributeValue(ReactomeJavaConstants.dateTime);
-//					otherDateTime = otherDateTime.replaceAll("\\.[0-9]+$", "");
-//					// When dates are converted to strings in the Reactome API, they are formatted like this: "2015-06-12 04:00:00.0"
-//					DateTimeFormatter sdf = DateTimeFormatter.ofPattern("y-M-d H:m:s");
-//					LocalDateTime ldt = LocalDateTime.parse(instanceEditDateTime, sdf);
-//					LocalDateTime odt = LocalDateTime.parse(otherDateTime, sdf);
-//					
-//					return ldt.compareTo(odt);
-//				}
-//				catch (Exception e)
-//				{
-//					e.printStackTrace();
-//					// Throw a RuntimeException because we are overriding compare from Comparator which is not
-//					// declared as throwing an exception. But if an exception is raised (probably by attempts
-//					// to get data from the database), then there is no sensible way to continue comparing
-//					// two objects so the exception must be rethrown.
-//					throw new RuntimeException(e);
-//				}
-//			}
-//		};
-//	
 	/**
 	 * Constructor to create a DOISuggester-contexted Reaction-like Event object.
 	 * @param instance - The underlying instance from the database. This is a ReactionlikeEvent object.
@@ -74,7 +42,6 @@ public class ReactionlikeEvent
 	public ReactionlikeEvent(GKInstance instance, MySQLAdaptor prevAdaptor) throws Exception
 	{
 		this.rle = instance;
-//		this.adaptor = (MySQLAdaptor) this.rle.getDbAdaptor();
 		GKInstance prevInstance = prevAdaptor.fetchInstance(this.rle.getDBID());
 		if (prevInstance != null)
 		{
@@ -101,7 +68,6 @@ public class ReactionlikeEvent
 	public ReactionlikeEvent(GKInstance instance) throws Exception
 	{
 		this.rle = instance;
-//		this.adaptor = (MySQLAdaptor) this.rle.getDbAdaptor();
 	}
 	
 	public List<GKInstance> getAuthoredInstanceEdits()
@@ -110,7 +76,7 @@ public class ReactionlikeEvent
 		{
 			try
 			{
-				this.authoredInstancedEdits = this.getSortedInstanceEdits(ReactomeJavaConstants.authored);
+				this.authoredInstancedEdits = this.rle.getAttributeValuesList(ReactomeJavaConstants.authored);
 			}
 			catch (Exception e)
 			{
@@ -126,7 +92,7 @@ public class ReactionlikeEvent
 		{
 			try
 			{
-				this.reviewedInstancedEdits = this.getSortedInstanceEdits(ReactomeJavaConstants.reviewed);
+				this.reviewedInstancedEdits = this.rle.getAttributeValuesList(ReactomeJavaConstants.reviewed);
 			}
 			catch (Exception e)
 			{
@@ -144,7 +110,7 @@ public class ReactionlikeEvent
 		{
 			try
 			{
-				this.revisedInstancedEdits = this.getSortedInstanceEdits(ReactomeJavaConstants.revised);
+				this.revisedInstancedEdits = this.rle.getAttributeValuesList(ReactomeJavaConstants.revised);
 			}
 			catch (Exception e)
 			{
@@ -157,13 +123,6 @@ public class ReactionlikeEvent
 	public GKInstance getUnderlyingInstance()
 	{
 		return this.rle;
-	}
-	
-	private List<GKInstance> getSortedInstanceEdits(String attributeName) throws InvalidAttributeException, Exception
-	{
-		List<GKInstance> instanceEdits = this.rle.getAttributeValuesList(attributeName);
-//		instanceEdits.sort(DOISuggesterRLE.instanceEditComparator);
-		return instanceEdits;
 	}
 	
 	public List<GKInstance> getNewInstanceEdits()
@@ -308,13 +267,6 @@ public class ReactionlikeEvent
 				// probably a good idea to have this base case anyway.
 //				pathToReturn =  pathway;
 			}
-//			else if (parents.size() > 1)
-//			{
-				// This should not happen - an RLE should only be referred to via 1 "hasEvent" attribute. But, 
-				// if it does happen log it and exit - this is too weird to handle in code.
-//				System.out.println("Too many ancestors (" + parents.size() + ") for object: " + this.rle.toString());
-//				System.exit(-1);
-//			}
 			else
 			{
 				// There are a few ReactionlikeEvents that are referred to by multiple Pathways via hasEvent...
@@ -340,22 +292,18 @@ public class ReactionlikeEvent
 						if (newInstanceEdit.getDBID().equals(parentInstanceEdit.getDBID()))
 						{
 							instanceEditFound = true;
+							// If an ancestor of the RLE has the same InstanceEdit, it means we need to go up one more level to find an ancestor 
+							// that does *not* have the InstanceEdit
 							this.ancestors.addAll(this.getFurthestAncestorWithoutNewInstanceEdit(parent, newInstanceEdit));
 						}
 						i++;
 					}
-					// If an ancestor of the RLE has the same InstanceEdit, it means we need to go up one more level to find an ancestor 
-					// that does *not* have the InstanceEdit
-//					if (instanceEditFound)
-//					{
-						
-//						this.ancestors.add(pathToReturn);
-//					}
+					
 					if (!instanceEditFound)
 					{
 						// in this case we found a path that should be returned, but because an RLE could have had > 1 parent, we will
 						// ALSO add directly to the set.
-//						pathToReturn = parent;
+
 						this.ancestors.add(parent);
 					}
 				}
