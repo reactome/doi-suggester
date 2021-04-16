@@ -21,8 +21,6 @@ public class ReactionlikeEvent
 	private GKInstance rle;
 	// Corresponding RLE from the previous Release's database.
 	private ReactionlikeEvent prevRle = null;
-	// The DB Adaptor
-//	private MySQLAdaptor adaptor;
 	
 	private List<GKInstance> authoredInstancedEdits;
 	private List<GKInstance> reviewedInstancedEdits;
@@ -265,14 +263,7 @@ public class ReactionlikeEvent
 		List<GKInstance> parents;
 		try
 		{
-//			parents = (List<GKInstance>) this.rle.getReferers(ReactomeJavaConstants.hasEvent);
-//			if (parents != null)
-//			{
-//				for (GKInstance parent : parents)
-//				{
-					this.ancestors.addAll(this.getFurthestAncestorWithoutNewInstanceEdit(this.getUnderlyingInstance(), newInstanceEdit));
-//				}
-//			}
+			this.ancestors.addAll(this.getFurthestAncestorWithoutNewInstanceEdit(this.getUnderlyingInstance(), newInstanceEdit));
 		}
 		catch (Exception e)
 		{
