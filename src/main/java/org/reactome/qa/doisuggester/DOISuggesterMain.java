@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -59,7 +60,7 @@ public class DOISuggesterMain
 			InstanceUtilities.sortInstances(rleList);
 
 			// Structure for output
-			Map<String, String> suggestions = new HashMap<>();
+			Map<String, Set<String>> suggestions = new HashMap<>();
 			System.out.println(rleList.size() + " Reaction-like events will be checked.");
 			Map<String, Integer> rleCountsForPathways = new HashMap<>();
 			for (GKInstance currentRLE : rleList)
@@ -77,15 +78,9 @@ public class DOISuggesterMain
 						for (String rleKey : s.getRlesToInstanceEdits().keySet())
 						{
 							String instanceEdits = s.getRlesToInstanceEdits().get(rleKey).stream().reduce("", String::join) + "|";
-							String rleLine = rleKey + " " + instanceEdits + "\n";
-							if (suggestions.containsKey(pathway))
-							{
-								suggestions.put(pathway, suggestions.get(pathway) + " " + rleLine);	
-							}
-							else
-							{
-								suggestions.put(pathway, rleLine);
-							}
+							String rleLine = rleKey + " " + instanceEdits;
+							suggestions.computeIfAbsent(pathway, x -> new HashSet<>());
+							suggestions.get(pathway).add(rleLine);
 							rleCountsForPathways.put(pathway, rleCountsForPathways.get(pathway) + 1);
 						}
 					}
@@ -129,13 +124,16 @@ public class DOISuggesterMain
 	 * @param suggestions
 	 * @throws IOException
 	 */
-	private static void printOutput(Map<String, String> suggestions) throws IOException
+	private static void printOutput(Map<String, Set<String>> suggestions) throws IOException
 	{
 		try (CSVPrinter printer = new CSVPrinter(new FileWriter(new File("doi-suggestions.csv")), CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL)))
 		{
-			for (Entry<String, String> entry : suggestions.entrySet())
+			for (Entry<String, Set<String>> entry : suggestions.entrySet())
 			{
-				printer.printRecord(entry.getKey(), entry.getValue());
+				for (String rleString : entry.getValue())
+				{
+					printer.printRecord(entry.getKey(), rleString);
+				}
 			}
 		}
 	}
