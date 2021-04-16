@@ -114,6 +114,10 @@ public class Suggester
 				Suggestion s = new Suggestion();
 				s.setPathway(pathway.toString());
 				Map<String, Set<String>> rleMapToInstanceEdits = new HashMap<>();
+//				if (suggestedInstanceEdits.size() > 1)
+//				{
+//					System.out.println("Wow! > 1 InstanceEdit for " + this.rle.getUnderlyingInstance().toString() );
+//				}
 				rleMapToInstanceEdits.put(this.rle.getUnderlyingInstance().toString(), suggestedInstanceEdits);
 				s.setRlesToInstanceEdits(rleMapToInstanceEdits);
 				suggestions.add(s);

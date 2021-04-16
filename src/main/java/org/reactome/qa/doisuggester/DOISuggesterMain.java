@@ -8,12 +8,13 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -60,9 +61,10 @@ public class DOISuggesterMain
 			InstanceUtilities.sortInstances(rleList);
 
 			// Structure for output
-			Map<String, Set<String>> suggestions = new HashMap<>();
 			System.out.println(rleList.size() + " Reaction-like events will be checked.");
 			Map<String, Integer> rleCountsForPathways = new HashMap<>();
+			List<List<String>> records = new ArrayList<>();
+				
 			for (GKInstance currentRLE : rleList)
 			{
 				// Ignore inferred RLEs
@@ -77,16 +79,18 @@ public class DOISuggesterMain
 						rleCountsForPathways.computeIfAbsent(pathway, x -> Integer.valueOf(0));
 						for (String rleKey : s.getRlesToInstanceEdits().keySet())
 						{
-							String instanceEdits = s.getRlesToInstanceEdits().get(rleKey).stream().reduce("", String::join) + "|";
-							String rleLine = rleKey + " " + instanceEdits;
-							suggestions.computeIfAbsent(pathway, x -> new HashSet<>());
-							suggestions.get(pathway).add(rleLine);
+							String instanceEdits = s.getRlesToInstanceEdits().get(rleKey).stream().reduce("", (prev, instEd) -> prev + " | " + instEd );
+							List<String> record = new ArrayList<>();
+							record.add(pathway);
+							record.add(rleKey);
+							record.add(instanceEdits);
+							records.add(record);
 							rleCountsForPathways.put(pathway, rleCountsForPathways.get(pathway) + 1);
 						}
 					}
 				}
 			}
-			System.out.println(suggestions.size() + " top-level pathways have suggestions under them.");
+			
 			int total = 0;
 			for (Entry<String, Integer> entry : rleCountsForPathways.entrySet() )
 			{
@@ -94,7 +98,7 @@ public class DOISuggesterMain
 				total += entry.getValue();
 			}
 			System.out.println( total + " total RLEs have DOI suggestion.");
-			printOutput(suggestions);
+			printOutput(records);
 		}
 		catch (PropertyHasNoValueException | PropertyNotPresentException e)
 		{
@@ -124,16 +128,28 @@ public class DOISuggesterMain
 	 * @param suggestions
 	 * @throws IOException
 	 */
-	private static void printOutput(Map<String, Set<String>> suggestions) throws IOException
+	private static void printOutput(List<List<String>> records) throws IOException
 	{
-		try (CSVPrinter printer = new CSVPrinter(new FileWriter(new File("doi-suggestions.csv")), CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL)))
+		final int pathwayIndex = 0;
+		final int rleIndex = 1;
+		final int instanceEditIndex = 2;
+		try (CSVPrinter printer = new CSVPrinter(new FileWriter(new File("doi-suggestions.csv")), CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL).withHeader("Pathway","RLE", "InstanceEdits")))
 		{
-			for (Entry<String, Set<String>> entry : suggestions.entrySet())
+			Comparator<List<String>> recordComparator = (arg0, arg1) -> {
+					// first compare the pathway field
+					int compareResult = arg0.get(pathwayIndex).compareTo(arg1.get(pathwayIndex));
+					if (compareResult == 0)
+					{
+						// if they match, compare the ReactionlikeEvent.
+						compareResult = arg0.get(rleIndex).compareTo(arg1.get(rleIndex));
+						//...no need to go further and compare InstanceEdits because all of the instanceEdits for an RLE are already concatenated into a single string.
+					}
+					return compareResult;
+				};
+			
+			for (List<String> record : records.stream().sorted(recordComparator).collect(Collectors.toList()))
 			{
-				for (String rleString : entry.getValue())
-				{
-					printer.printRecord(entry.getKey(), rleString);
-				}
+				printer.printRecord(record.get(pathwayIndex), record.get(rleIndex), record.get(instanceEditIndex));
 			}
 		}
 	}
