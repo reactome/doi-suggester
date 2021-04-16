@@ -33,7 +33,8 @@ public class ReactionlikeEvent
 	/**
 	 * Constructor to create a DOISuggester-contexted Reaction-like Event object.
 	 * @param instance - The underlying instance from the database. This is a ReactionlikeEvent object.
-	 * @param prevAdaptor - A database adaptor that should point to the *previous* version of the database. This will be used to look at previous versions of the <code>instance</code>
+	 * @param prevAdaptor - A database adaptor that should point to the *previous* version of the database. This will be used to look at
+	 * previous versions of the <code>instance</code>
 	 * @throws Exception
 	 */
 	public ReactionlikeEvent(GKInstance instance, MySQLAdaptor prevAdaptor) throws Exception
@@ -58,7 +59,8 @@ public class ReactionlikeEvent
 	
 	/**
 	 * A constructor that should be used to create an instance of this class that represents a version of a ReactionlikeEvent object
-	 * from a previous database, or a parent from the current database, because it does not take a MySQLAdaptor for a previous database as an argument.
+	 * from a previous database, or a parent of a ReactionlikeEvent from the current database, because it does not take a MySQLAdaptor
+	 * for a previous database as an argument.
 	 * @param instance - The underlying instance from the database.
 	 * @throws Exception
 	 */
@@ -263,14 +265,14 @@ public class ReactionlikeEvent
 		List<GKInstance> parents;
 		try
 		{
-			parents = (List<GKInstance>) this.rle.getReferers(ReactomeJavaConstants.hasEvent);
-			if (parents != null)
-			{
-				for (GKInstance parent : parents)
-				{
-					this.ancestors.addAll(this.getFurthestAncestorWithoutNewInstanceEdit(parent, newInstanceEdit));
-				}
-			}
+//			parents = (List<GKInstance>) this.rle.getReferers(ReactomeJavaConstants.hasEvent);
+//			if (parents != null)
+//			{
+//				for (GKInstance parent : parents)
+//				{
+					this.ancestors.addAll(this.getFurthestAncestorWithoutNewInstanceEdit(this.getUnderlyingInstance(), newInstanceEdit));
+//				}
+//			}
 		}
 		catch (Exception e)
 		{
@@ -299,6 +301,7 @@ public class ReactionlikeEvent
 				// just return this pathway. Probably not going to happen, but it's
 				// probably a good idea to have this base case anyway.
 //				pathToReturn =  pathway;
+				this.ancestors.add(pathway);
 			}
 			else
 			{
@@ -312,7 +315,7 @@ public class ReactionlikeEvent
 					List<GKInstance> parentInstanceEdits = new ArrayList<>();
 					// Ok, technically, the parent object should be a Pathway, and a ReactionelikeEvent
 					// is *not* a sublass of Pathway, but they are both subclasses of Event,
-					// and Event has the attributes "authored", "revised", "reviewed", so should still work.
+					// and Event has the attributes "authored", "revised", "reviewed", so should work.
 					ReactionlikeEvent parentPathway = new ReactionlikeEvent(parent);
 					parentInstanceEdits.addAll(parentPathway.getAuthoredInstanceEdits());
 					parentInstanceEdits.addAll(parentPathway.getReviewedInstanceEdits());
@@ -334,9 +337,10 @@ public class ReactionlikeEvent
 					
 					if (!instanceEditFound)
 					{
-						// in this case we found a path that should be returned, but because an RLE could have had > 1 parent, we will
-						// ALSO add directly to the set.
-
+						// A pathway that does not have the "new" instanceEdit is the sort of pathway we're interested in
+						// so add it to the list of ancestors that will be returned. 
+						// I think "parent" should have gone here, but I think "pathway" makes the output resemble more closely Justin's output. 
+//						this.ancestors.add(pathway);
 						this.ancestors.add(parent);
 					}
 				}
