@@ -61,7 +61,7 @@ public class DOISuggesterMain
 			// Structure for output
 			Map<String, String> suggestions = new HashMap<>();
 			System.out.println(rleList.size() + " Reaction-like events will be checked.");
-			
+			Map<String, Integer> rleCountsForPathways = new HashMap<>();
 			for (GKInstance currentRLE : rleList)
 			{
 				// Ignore inferred RLEs
@@ -73,7 +73,7 @@ public class DOISuggesterMain
 					for (Suggestion s : rleSuggestions)
 					{
 						String pathway = s.getPathway();
-						 
+						rleCountsForPathways.computeIfAbsent(pathway, x -> Integer.valueOf(0));
 						for (String rleKey : s.getRlesToInstanceEdits().keySet())
 						{
 							String instanceEdits = s.getRlesToInstanceEdits().get(rleKey).stream().reduce("", String::join) + "|";
@@ -86,12 +86,19 @@ public class DOISuggesterMain
 							{
 								suggestions.put(pathway, rleLine);
 							}
+							rleCountsForPathways.put(pathway, rleCountsForPathways.get(pathway) + 1);
 						}
 					}
 				}
 			}
 			System.out.println(suggestions.size() + " top-level pathways have suggestions under them.");
-
+			int total = 0;
+			for (Entry<String, Integer> entry : rleCountsForPathways.entrySet() )
+			{
+				System.out.println(entry.getValue() + " RLEs for " + entry.getKey());
+				total += entry.getValue();
+			}
+			System.out.println( total + " total RLEs have DOI suggestion.");
 			printOutput(suggestions);
 		}
 		catch (PropertyHasNoValueException | PropertyNotPresentException e)
