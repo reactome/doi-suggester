@@ -92,13 +92,7 @@ public class DOISuggesterMain
 			}
 			System.out.println(suggestions.size() + " top-level pathways have suggestions under them.");
 
-			try (CSVPrinter printer = new CSVPrinter(new FileWriter(new File("doi-suggestions.csv")), CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL)))
-			{
-				for (Entry<String, String> entry : suggestions.entrySet())
-				{
-					printer.printRecord(entry.getKey(), entry.getValue());
-				}
-			}
+			printOutput(suggestions);
 		}
 		catch (PropertyHasNoValueException | PropertyNotPresentException e)
 		{
@@ -121,5 +115,21 @@ public class DOISuggesterMain
 			e.printStackTrace();
 		}
 		System.out.println("All done.");
+	}
+
+	/**
+	 * Print the suggestions to a file.
+	 * @param suggestions
+	 * @throws IOException
+	 */
+	private static void printOutput(Map<String, String> suggestions) throws IOException
+	{
+		try (CSVPrinter printer = new CSVPrinter(new FileWriter(new File("doi-suggestions.csv")), CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL)))
+		{
+			for (Entry<String, String> entry : suggestions.entrySet())
+			{
+				printer.printRecord(entry.getKey(), entry.getValue());
+			}
+		}
 	}
 }

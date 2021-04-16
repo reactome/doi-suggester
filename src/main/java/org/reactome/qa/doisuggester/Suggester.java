@@ -9,48 +9,73 @@ import java.util.Set;
 import org.gk.model.GKInstance;
 
 /**
- * Makes a DOI suggestion about an RLE
+ * An object that makes a DOI suggestion about an RLE
  * @author sshorser
  *
  */
 public class Suggester
 {
-
+	/**
+	 * Represents a suggestion about a single pathway, and the RLEs and InstanceEdits that are related to the suggestion.
+	 * @author sshorser
+	 *
+	 */
 	public class Suggestion
 	{
 		private String pathway;
 		private Map<String, Set<String>> rlesToInstanceEdits;
 
+		/**
+		 * Gets the pathway.
+		 * @return
+		 */
 		public String getPathway()
 		{
 			return pathway;
 		}
+		
+		/**
+		 * Sets the pathway.
+		 * @param pathway
+		 */
 		public void setPathway(String pathway)
 		{
 			this.pathway = pathway;
 		}
+		
+		/**
+		 * Gets a map that is a mapping of RLEs to a set of InstanceEdits.
+		 * @return
+		 */
 		public Map<String, Set<String>> getRlesToInstanceEdits()
 		{
 			return rlesToInstanceEdits;
 		}
+		
+		/**
+		 * Sets a map that is a mapping of RLEs to a set of InstanceEdits.
+		 * @param rlesToInstanceEdits
+		 */
 		public void setRlesToInstanceEdits(Map<String, Set<String>> rlesToInstanceEdits)
 		{
 			this.rlesToInstanceEdits = rlesToInstanceEdits;
 		}
-	}	
+	}
+	
 	private ReactionlikeEvent rle;
 	
 	/**
 	 * Create a new suggester.
-	 * @param doiSuggesterRle The RLE to make a suggestion about.
+	 * @param reactionlikeEvent The RLE to make a suggestion about.
 	 */
-	public Suggester(ReactionlikeEvent doiSuggesterRle)
+	public Suggester(ReactionlikeEvent reactionlikeEvent)
 	{
-		this.rle = doiSuggesterRle;
+		this.rle = reactionlikeEvent;
 	}
 	
 	/**
-	 * Gets the suggestion.
+	 * Gets a suggestion. The suggestion is actually returned as a set. In the case where
+	 * an RLE has multiple parents and both may require a new DOI, then > 1 Suggestion object will be returned.
 	 * @return
 	 */
 	public Set<Suggestion> getSuggestion()
@@ -97,6 +122,11 @@ public class Suggester
 		return suggestions;
 	}
 
+	/**
+	 * Gets a set of pathways for this suggester's RLE that do not have "new" InstanceEdits. 
+	 * @param newInstanceEdits
+	 * @return
+	 */
 	private Set<GKInstance> getPathways(List<GKInstance> newInstanceEdits)
 	{
 		Set<GKInstance> pathways = new HashSet<>();

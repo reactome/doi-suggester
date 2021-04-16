@@ -1,9 +1,6 @@
 package org.reactome.qa.doisuggester;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -70,6 +67,10 @@ public class ReactionlikeEvent
 		this.rle = instance;
 	}
 	
+	/**
+	 * Gets a list of "authored" InstanceEdits for this RLE 
+	 * @return
+	 */
 	public List<GKInstance> getAuthoredInstanceEdits()
 	{
 		if (this.authoredInstancedEdits == null)
@@ -86,6 +87,10 @@ public class ReactionlikeEvent
 		return this.authoredInstancedEdits;
 	}
 	
+	/**
+	 * Gets a list of "reviewed" InstanceEdits for this RLE
+	 * @return
+	 */
 	public List<GKInstance> getReviewedInstanceEdits()
 	{
 		if (this.reviewedInstancedEdits == null)
@@ -102,8 +107,10 @@ public class ReactionlikeEvent
 		return this.reviewedInstancedEdits;
 	}
 
-	
-	
+	/**
+	 * Gets a list of "revised" InstanceEdits for this RLE
+	 * @return
+	 */
 	public List<GKInstance> getRevisedInstanceEdits()
 	{
 		if (this.revisedInstancedEdits == null)
@@ -120,11 +127,20 @@ public class ReactionlikeEvent
 		return this.revisedInstancedEdits;
 	}
 	
+	/**
+	 * Gets the underlying GKInstance object to which this ReactionlikeEvent object is a wrapper.
+	 * @return
+	 */
 	public GKInstance getUnderlyingInstance()
 	{
 		return this.rle;
 	}
 	
+	/**
+	 * Gets "new" InstanceEdits. An InstanceEdit is considered new if it exists in the current version of this RLE, but does *not* 
+	 * exist in the version of this RLE from the previous release. The InstanceEdits could be of these three types: authored, revised, reviewed.
+	 * @return
+	 */
 	public List<GKInstance> getNewInstanceEdits()
 	{
 		List<GKInstance> newInstanceEdits = new ArrayList<>();
@@ -132,21 +148,28 @@ public class ReactionlikeEvent
 		{
 			// check the authored Instance Edits
 			List<GKInstance> prevAuthoredIEs = this.prevRle.getAuthoredInstanceEdits();
-			newInstanceEdits.addAll(this.getNewInstanceEditsFromList(this.getAuthoredInstanceEdits(), prevAuthoredIEs));
+			newInstanceEdits.addAll(this.getNewInstanceEditsFromLists(this.getAuthoredInstanceEdits(), prevAuthoredIEs));
 			
 			// check the reviewed Instance Edits
 			List<GKInstance> prevReviewedIEs = this.prevRle.getReviewedInstanceEdits();
-			newInstanceEdits.addAll(this.getNewInstanceEditsFromList(this.getReviewedInstanceEdits(), prevReviewedIEs));
+			newInstanceEdits.addAll(this.getNewInstanceEditsFromLists(this.getReviewedInstanceEdits(), prevReviewedIEs));
 			
 			// check the reviewed Instance Edits
 			List<GKInstance> prevReviseddIEs = this.prevRle.getRevisedInstanceEdits();
-			newInstanceEdits.addAll(this.getNewInstanceEditsFromList(this.getRevisedInstanceEdits(), prevReviseddIEs));
+			newInstanceEdits.addAll(this.getNewInstanceEditsFromLists(this.getRevisedInstanceEdits(), prevReviseddIEs));
 		}
 		
 		return newInstanceEdits;
 	}
 
-	private List<GKInstance> getNewInstanceEditsFromList(List<GKInstance> currentInstanceEdits, List<GKInstance> prevInstanceEdits)
+	/**
+	 * Gets InstanceEdits that are associated with the current version of an object but not with the previous version
+	 * of an object.
+	 * @param currentInstanceEdits - A list of InstanceEdits from the current database
+	 * @param prevInstanceEdits - a list of InstanceEdits from the previous database.
+	 * @return Objects in currentInstanceEdits that are not in prevInstanceEdits
+	 */
+	private List<GKInstance> getNewInstanceEditsFromLists(List<GKInstance> currentInstanceEdits, List<GKInstance> prevInstanceEdits)
 	{
 		List<GKInstance> newInstanceEdits = new ArrayList<>();
 		// A naive approach to this problem would simply look at list sizes, but that wont' work...
@@ -176,6 +199,13 @@ public class ReactionlikeEvent
 		return newInstanceEdits;
 	}
 	
+	/**
+	 * Filters a list of InstanceEdits such that only "non-Reactome" InstanceEdits are returned.
+	 * And InstanceEdits is considered to be "non-Reactome" if at least one author of the InstanceEdit is not
+	 * a member of the Reactome project.
+	 * @param instanceEdits
+	 * @return
+	 */
 	public static List<GKInstance> filterForNonReactomeInstanceEdits(List<GKInstance> instanceEdits)
 	{
 		List<GKInstance> nonReactomeInstanceEdits = new ArrayList<>();
@@ -222,9 +252,11 @@ public class ReactionlikeEvent
 	}
 	
 	/**
-	 * Gets the furthest ancestor of this Reaction-like event which does not have newInstanceEdit as one of its InstanceEdits.
+	 * Gets the furthest ancestors of this Reaction-like event which does not have newInstanceEdit as one of its InstanceEdits.
+	 * This method will perform a recursive search from a reaction-like event up to a top-level pathway, searching for a pathway that
+	 * does not have a "new" InstanceEdit. A set of all such pathways is returned.
 	 * @param newInstanceEdit a "new" InstanceEdit.
-	 * @return The pathway object.
+	 * @return The pathway objects.
 	 */
 	public Set<GKInstance> getFurthestAncestorsWithoutNewInstanceEdit(GKInstance newInstanceEdit)
 	{
@@ -249,8 +281,9 @@ public class ReactionlikeEvent
 	}
 	
 	/**
-	 * Gets the ancestor of a pathway/RLE that is furthest up the tree and also does not have the same InstanceEdit.
-	 * @param a parent pathway
+	 * Private recursive method to search up the Pathway hierarchy.
+	 * This method gets the ancestors of a pathway/RLE that is furthest up the tree and also does not have the same InstanceEdit.
+	 * @param A pathway to examine.
 	 * @param newInstanceEdit the InstanceEdit to check for.
 	 * @return
 	 */
