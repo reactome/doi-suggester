@@ -135,6 +135,12 @@ public class DOISuggesterMain
 		final int instanceEditIndex = 2;
 		try (CSVPrinter printer = new CSVPrinter(new FileWriter(new File("doi-suggestions.csv")), CSVFormat.DEFAULT.withQuoteMode(QuoteMode.ALL).withHeader("Pathway","RLE", "InstanceEdits")))
 		{
+			// This comparator is used to ensure the outputs are neatly sorted by Pathway, and then by RLE.
+			// 
+			// Since we're sorting the string representation of these objects, the output will actually end up being sorted by DB ID,
+			// since string representations are usually structured as something like "[${DB_ID}] ${_displayName}". But that's not a big deal - we just 
+			// want *SOME* ordering imposed so records of different Pathways are all grouped together in the output. Otherwise, the report is harder
+			// to read.
 			Comparator<List<String>> recordComparator = (arg0, arg1) -> {
 					// first compare the pathway field
 					int compareResult = arg0.get(pathwayIndex).compareTo(arg1.get(pathwayIndex));
