@@ -35,7 +35,7 @@ public class DOISuggesterMain
 
 	public static void main(String[] args) throws IOException
 	{
-		// TODO: Use log4j instead of printing to the console.
+		// TODO: Use log4j instead of printing to the console. Will come in a future PR.
 		System.out.println("Checking for RLEs that might need a DOI...");
 		String pathToConfig = Paths.get("src", "main", "resources", "config.properties").toString();
 		String username;
@@ -115,11 +115,13 @@ public class DOISuggesterMain
 		}
 		catch (SQLException e)
 		{
+			System.err.println("SQL Exception caught - most likely there was a problem connecting to the database. Maybe check your connection settings and try again?");
 			e.printStackTrace();
 			System.exit(-1);
 		}
 		catch (InvalidAttributeException e)
 		{
+			System.err.println("Error retrieving data - an attempt was made to access data via an invalid attribute.");
 			e.printStackTrace();
 			System.exit(-1);
 		}
