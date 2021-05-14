@@ -29,8 +29,7 @@ public class Suggester
 		private Map<String, Set<String>> rlesToInstanceEdits;
 
 		/**
-		 * Gets the pathway.
-		 * @return
+		 * @return the pathway.
 		 */
 		public String getPathway()
 		{
@@ -47,8 +46,7 @@ public class Suggester
 		}
 
 		/**
-		 * Gets a map that is a mapping of RLEs to a set of InstanceEdits.
-		 * @return
+		 * @return a map that is a mapping of RLEs to a set of InstanceEdits.
 		 */
 		public Map<String, Set<String>> getRlesToInstanceEdits()
 		{
@@ -79,7 +77,7 @@ public class Suggester
 	/**
 	 * Gets a suggestion. The suggestion is actually returned as a set. In the case where
 	 * an RLE has multiple parents and both may require a new DOI, then > 1 Suggestion object will be returned.
-	 * @return
+	 * @return A set of Suggestion objects.
 	 */
 	public Set<Suggestion> getSuggestion()
 	{
@@ -127,7 +125,7 @@ public class Suggester
 	/**
 	 * Gets a set of pathways for this suggester's RLE that do not have "new" InstanceEdits.
 	 * @param newInstanceEdits
-	 * @return
+	 * @return a set of Pathways
 	 */
 	private Set<GKInstance> getPathways(List<GKInstance> newInstanceEdits)
 	{
