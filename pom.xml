@@ -10,6 +10,22 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
+	<developers>
+		<developer>
+			<email>solomon.shorser@oicr.on.ca</email>
+			<name>Solomon Shorser</name>
+			<organization>Ontario Institute of Cancer Research</organization>
+			<organizationUrl>https://oicr.on.ca</organizationUrl>
+		</developer>
+		<developer>
+			<!-- I think Justin should get credit for the original implementation, even though he left OCIR before this code got to github. -->
+			<name>Justin Cook</name>
+			<organization>Ontario Institute of Cancer Research</organization>
+			<organizationUrl>https://oicr.on.ca</organizationUrl>
+		</developer>
+
+	</developers>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.reactome.release</groupId>
@@ -31,6 +47,11 @@
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
 			<version>2.14.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.beust</groupId>
+			<artifactId>jcommander</artifactId>
+			<version>1.78</version>
 		</dependency>
 	</dependencies>
 

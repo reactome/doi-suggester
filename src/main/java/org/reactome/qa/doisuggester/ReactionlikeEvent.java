@@ -321,7 +321,7 @@ public class ReactionlikeEvent
 						if (newInstanceEdit.getDBID().equals(parentInstanceEdit.getDBID()))
 						{
 							instanceEditFound = true;
-							// If an ancestor of the RLE has the same InstanceEdit, it means we need to go up one more level to find an ancestor
+							// If an ancestor of the RLE has the same InstanceEdit, it means we need to (recursively) go up one more level to find an ancestor
 							// that does *not* have the InstanceEdit
 							this.ancestors.addAll(this.getFurthestAncestorWithoutNewInstanceEdit(parent, newInstanceEdit));
 						}

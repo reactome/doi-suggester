@@ -29,25 +29,35 @@ import org.reactome.qa.doisuggester.Suggester.Suggestion;
 import org.reactome.util.general.MandatoryProperties;
 import org.reactome.util.general.MandatoryProperties.PropertyHasNoValueException;
 import org.reactome.util.general.MandatoryProperties.PropertyNotPresentException;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 public class DOISuggesterMain
 {
 
+	@Parameter(names = {"-c"}, description = "The path to the configuration file. Default is src/main/resources/config.properties")
+	private static String configPath = "src/main/resources/config.properties";
+
 	private static final Logger logger = LogManager.getLogger();
 
 	public static void main(String[] args) throws IOException
 	{
+		DOISuggesterMain mainObject = new DOISuggesterMain();
+
+		JCommander.newBuilder().addObject(mainObject).build().parse(args);
+
 		logger.info("Checking for RLEs that might need a DOI...");
-		String pathToConfig = Paths.get("src", "main", "resources", "config.properties").toString();
 		String username;
 		String password;
 		String database;
 		String databasePrev;
 		String host;
 		int port;
-		try(FileInputStream fis = new FileInputStream(pathToConfig))
+		try(FileInputStream fis = new FileInputStream(configPath))
 		{
 			MandatoryProperties props = new MandatoryProperties();
 			props.load(fis);
@@ -66,7 +76,7 @@ public class DOISuggesterMain
 			InstanceUtilities.sortInstances(rleList);
 
 			// Structure for output
-			System.out.println(rleList.size() + " Reaction-like events will be checked.");
+			logger.info("{} Reaction-like events will be checked.", rleList.size());
 			Map<String, Integer> rleCountsForPathways = new HashMap<>();
 			List<List<String>> records = new ArrayList<>();
 
