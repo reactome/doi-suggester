@@ -29,14 +29,17 @@ import org.reactome.qa.doisuggester.Suggester.Suggestion;
 import org.reactome.util.general.MandatoryProperties;
 import org.reactome.util.general.MandatoryProperties.PropertyHasNoValueException;
 import org.reactome.util.general.MandatoryProperties.PropertyNotPresentException;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class DOISuggesterMain
 {
 
+	private static final Logger logger = LogManager.getLogger();
+
 	public static void main(String[] args) throws IOException
 	{
-		// TODO: Use log4j instead of printing to the console. Will come in a future PR.
-		System.out.println("Checking for RLEs that might need a DOI...");
+		logger.info("Checking for RLEs that might need a DOI...");
 		String pathToConfig = Paths.get("src", "main", "resources", "config.properties").toString();
 		String username;
 		String password;
@@ -96,41 +99,39 @@ public class DOISuggesterMain
 			int total = 0;
 			for (Entry<String, Integer> entry : rleCountsForPathways.entrySet() )
 			{
-				System.out.println(entry.getValue() + " RLEs for " + entry.getKey());
+				logger.info("{} RLEs for {}", entry.getValue(),  entry.getKey());
 				total += entry.getValue();
 			}
-			System.out.println( total + " total RLEs have DOI suggestion.");
+			logger.info( "{} total RLEs have DOI suggestion.", total);
 			printOutput(records);
 		}
 		catch (PropertyHasNoValueException | PropertyNotPresentException e)
 		{
-			System.err.println("Your properties file appears to be misconfigured: " + e.getMessage());
+			logger.error("Your properties file appears to be misconfigured: {}", e.getMessage());
 			e.printStackTrace();
 			System.exit(-1);
 		}
 		catch (FileNotFoundException e)
 		{
-			System.err.println("The config.properties file could not be found. Now exiting.");
+			logger.error("The config.properties file could not be found. Now exiting.");
 			System.exit(-1);
 		}
 		catch (SQLException e)
 		{
-			System.err.println("SQL Exception caught - most likely there was a problem connecting to the database. Maybe check your connection settings and try again?");
-			e.printStackTrace();
+			logger.error("SQL Exception caught - most likely there was a problem connecting to the database. Maybe check your connection settings and try again?", e);
 			System.exit(-1);
 		}
 		catch (InvalidAttributeException e)
 		{
-			System.err.println("Error retrieving data - an attempt was made to access data via an invalid attribute.");
-			e.printStackTrace();
+			logger.error("Error retrieving data - an attempt was made to access data via an invalid attribute.", e);
 			System.exit(-1);
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+			logger.error("Exception was caught.", e);
 			System.exit(-1);
 		}
-		System.out.println("All done.");
+		logger.info("All done.");
 	}
 
 	/**

@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.GKInstance;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.MySQLAdaptor;
@@ -17,6 +19,8 @@ import org.gk.schema.InvalidAttributeException;
  */
 public class ReactionlikeEvent
 {
+	private static final Logger logger = LogManager.getLogger();
+
 	// The underlying RLE, in the current database.
 	private GKInstance rle;
 	// Corresponding RLE from the previous Release's database.
@@ -81,7 +85,7 @@ public class ReactionlikeEvent
 			}
 			catch (Exception e)
 			{
-				e.printStackTrace();
+				logger.error(e);
 			}
 		}
 		return this.authoredInstancedEdits;
@@ -101,7 +105,7 @@ public class ReactionlikeEvent
 			}
 			catch (Exception e)
 			{
-				e.printStackTrace();
+				logger.error(e);
 			}
 		}
 		return this.reviewedInstancedEdits;
@@ -121,7 +125,7 @@ public class ReactionlikeEvent
 			}
 			catch (Exception e)
 			{
-				e.printStackTrace();
+				logger.error(e);
 			}
 		}
 		return this.revisedInstancedEdits;
@@ -242,11 +246,11 @@ public class ReactionlikeEvent
 		}
 		catch (InvalidAttributeException e)
 		{
-			e.printStackTrace();
+			logger.error("InvalidAttributeException was caught!", e);
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+			logger.error(e);
 		}
 		return nonReactomeInstanceEdits;
 	}
@@ -267,8 +271,7 @@ public class ReactionlikeEvent
 		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e);
 		}
 		return this.ancestors;
 	}
@@ -342,17 +345,14 @@ public class ReactionlikeEvent
 						else
 						{
 							this.ancestors.add(pathway);
-
 						}
-
 					}
 				}
 			}
 		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e);
 		}
 		//
 		return this.ancestors;
