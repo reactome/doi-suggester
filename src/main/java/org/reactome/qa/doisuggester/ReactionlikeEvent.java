@@ -33,7 +33,7 @@ public class ReactionlikeEvent
 	 * @param instance - The underlying instance from the database. This is a ReactionlikeEvent object.
 	 * @param prevAdaptor - A database adaptor that should point to the *previous* version of the database. This will be used to look at
 	 * previous versions of the <code>instance</code>
-	 * @throws Exception
+	 * @throws Exception if anything happens while fetching an instance from the database.
 	 */
 	public ReactionlikeEvent(GKInstance instance, MySQLAdaptor prevAdaptor) throws Exception
 	{
@@ -47,8 +47,8 @@ public class ReactionlikeEvent
 	}
 
 	/**
-	 * Returns true if the underlying RLE instance is new - there is no corresponding instance in the previous Releases's database.
-	 * @return
+	 * Is this Reaction-like event "new"?
+	 * @return True if the underlying RLE instance is new - there is no corresponding instance in the previous Releases's database.
 	 */
 	public boolean isNewRLE()
 	{
@@ -67,8 +67,7 @@ public class ReactionlikeEvent
 	}
 
 	/**
-	 * Gets a list of "authored" InstanceEdits for this RLE
-	 * @return
+	 * @return a list of "authored" InstanceEdits for this RLE
 	 */
 	public List<GKInstance> getAuthoredInstanceEdits()
 	{
@@ -87,8 +86,7 @@ public class ReactionlikeEvent
 	}
 
 	/**
-	 * Gets a list of "reviewed" InstanceEdits for this RLE
-	 * @return
+	 * @return A list of "reviewed" InstanceEdits for this RLE
 	 */
 	public List<GKInstance> getReviewedInstanceEdits()
 	{
@@ -107,8 +105,7 @@ public class ReactionlikeEvent
 	}
 
 	/**
-	 * Gets a list of "revised" InstanceEdits for this RLE
-	 * @return
+	 * @return A list of "revised" InstanceEdits for this RLE
 	 */
 	public List<GKInstance> getRevisedInstanceEdits()
 	{
@@ -127,8 +124,7 @@ public class ReactionlikeEvent
 	}
 
 	/**
-	 * Gets the underlying GKInstance object to which this ReactionlikeEvent object is a wrapper.
-	 * @return
+	 * @return The underlying GKInstance object to which this ReactionlikeEvent object is a wrapper.
 	 */
 	public GKInstance getUnderlyingInstance()
 	{
@@ -138,7 +134,7 @@ public class ReactionlikeEvent
 	/**
 	 * Gets "new" InstanceEdits. An InstanceEdit is considered new if it exists in the current version of this RLE, but does *not*
 	 * exist in the version of this RLE from the previous release. The InstanceEdits could be of these three types: authored, revised, reviewed.
-	 * @return
+	 * @return A list of "new" InstanceEdits.
 	 */
 	public List<GKInstance> getNewInstanceEdits()
 	{
@@ -203,7 +199,7 @@ public class ReactionlikeEvent
 	 * And InstanceEdits is considered to be "non-Reactome" if at least one author of the InstanceEdit is not
 	 * a member of the Reactome project.
 	 * @param instanceEdits
-	 * @return
+	 * @return A list of InstanceEdits that are "non-Reactome". It will be a subset of instanceEdits.
 	 */
 	public static List<GKInstance> filterForNonReactomeInstanceEdits(List<GKInstance> instanceEdits)
 	{
