@@ -38,14 +38,14 @@ public class DOISuggesterMain
 		// TODO: Use log4j instead of printing to the console. Will come in a future PR.
 		System.out.println("Checking for RLEs that might need a DOI...");
 		String pathToConfig = Paths.get("src", "main", "resources", "config.properties").toString();
-		String username;
-		String password;
-		String database;
-		String databasePrev;
-		String host;
-		int port;
 		try(FileInputStream fis = new FileInputStream(pathToConfig))
 		{
+			String username;
+			String password;
+			String database;
+			String databasePrev;
+			String host;
+			int port;
 			MandatoryProperties props = new MandatoryProperties();
 			props.load(fis);
 
@@ -75,13 +75,13 @@ public class DOISuggesterMain
 					ReactionlikeEvent rle = new ReactionlikeEvent(currentRLE, dbAdaptorPrev);
 					Suggester suggester = new Suggester(rle);
 					Set<Suggestion> rleSuggestions = suggester.getSuggestion();
-					for (Suggestion s : rleSuggestions)
+					for (Suggestion suggestion : rleSuggestions)
 					{
-						String pathway = s.getPathway();
+						String pathway = suggestion.getPathway();
 						rleCountsForPathways.computeIfAbsent(pathway, x -> Integer.valueOf(0));
-						for (String rleKey : s.getRlesToInstanceEdits().keySet())
+						for (String rleKey : suggestion.getRlesToInstanceEdits().keySet())
 						{
-							String instanceEdits = s.getRlesToInstanceEdits().get(rleKey).stream().reduce("", (prev, instEd) -> prev + " | " + instEd );
+							String instanceEdits = suggestion.getRlesToInstanceEdits().get(rleKey).stream().reduce("", (prev, instEd) -> prev + " | " + instEd );
 							List<String> record = new ArrayList<>();
 							record.add(pathway);
 							record.add(rleKey);
@@ -135,10 +135,10 @@ public class DOISuggesterMain
 
 	/**
 	 * Print the suggestions to a file.
-	 * @param suggestions A list of lists - each sublist is an element of a suggestion.
+	 * @param suggestionRecords A list of lists - each sublist is an element of a suggestion (but not an actual suggestion object).
 	 * @throws IOException - Could be thrown if there is a problem writing the output to a file.
 	 */
-	private static void printOutput(List<List<String>> records) throws IOException
+	private static void printOutput(List<List<String>> suggestionRecords) throws IOException
 	{
 		final int pathwayIndex = 0;
 		final int rleIndex = 1;
@@ -151,19 +151,19 @@ public class DOISuggesterMain
 			// since string representations are usually structured as something like "[${DB_ID}] ${_displayName}". But that's not a big deal - we just
 			// want *SOME* ordering imposed so records of different Pathways are all grouped together in the output. Otherwise, the report is harder
 			// to read.
-			Comparator<List<String>> recordComparator = (arg0, arg1) -> {
+			Comparator<List<String>> suggestionRecordComparator = (rec0, rec1) -> {
 					// first compare the pathway field
-					int compareResult = arg0.get(pathwayIndex).compareTo(arg1.get(pathwayIndex));
+					int compareResult = rec0.get(pathwayIndex).compareTo(rec1.get(pathwayIndex));
 					if (compareResult == 0)
 					{
 						// if they match, compare the ReactionlikeEvent.
-						compareResult = arg0.get(rleIndex).compareTo(arg1.get(rleIndex));
+						compareResult = rec0.get(rleIndex).compareTo(rec1.get(rleIndex));
 						//...no need to go further and compare InstanceEdits because all of the instanceEdits for an RLE are already concatenated into a single string.
 					}
 					return compareResult;
 				};
 
-			for (List<String> record : records.stream().sorted(recordComparator).collect(Collectors.toList()))
+			for (List<String> record : suggestionRecords.stream().sorted(suggestionRecordComparator).collect(Collectors.toList()))
 			{
 				printer.printRecord(record.get(pathwayIndex), record.get(rleIndex), record.get(instanceEditIndex));
 			}

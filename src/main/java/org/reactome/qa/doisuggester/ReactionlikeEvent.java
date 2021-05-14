@@ -60,9 +60,8 @@ public class ReactionlikeEvent
 	 * from a previous database, or a parent of a ReactionlikeEvent from the current database, because it does not take a MySQLAdaptor
 	 * for a previous database as an argument.
 	 * @param instance - The underlying instance from the database.
-	 * @throws Exception
 	 */
-	public ReactionlikeEvent(GKInstance instance) throws Exception
+	public ReactionlikeEvent(GKInstance instance)
 	{
 		this.rle = instance;
 	}
