@@ -33,7 +33,7 @@ public class Suggester
 		{
 			return pathway;
 		}
-		
+
 		/**
 		 * Sets the pathway.
 		 * @param pathway
@@ -42,7 +42,7 @@ public class Suggester
 		{
 			this.pathway = pathway;
 		}
-		
+
 		/**
 		 * Gets a map that is a mapping of RLEs to a set of InstanceEdits.
 		 * @return
@@ -51,7 +51,7 @@ public class Suggester
 		{
 			return rlesToInstanceEdits;
 		}
-		
+
 		/**
 		 * Sets a map that is a mapping of RLEs to a set of InstanceEdits.
 		 * @param rlesToInstanceEdits
@@ -61,9 +61,9 @@ public class Suggester
 			this.rlesToInstanceEdits = rlesToInstanceEdits;
 		}
 	}
-	
+
 	private ReactionlikeEvent rle;
-	
+
 	/**
 	 * Create a new suggester.
 	 * @param reactionlikeEvent The RLE to make a suggestion about.
@@ -72,7 +72,7 @@ public class Suggester
 	{
 		this.rle = reactionlikeEvent;
 	}
-	
+
 	/**
 	 * Gets a suggestion. The suggestion is actually returned as a set. In the case where
 	 * an RLE has multiple parents and both may require a new DOI, then > 1 Suggestion object will be returned.
@@ -80,7 +80,6 @@ public class Suggester
 	 */
 	public Set<Suggestion> getSuggestion()
 	{
-//		String suggestion = null;
 		Set<Suggestion> suggestions = new HashSet<>();
 		Set<GKInstance> pathways = new HashSet<>();
 		Set<String> suggestedInstanceEdits = new HashSet<>();
@@ -105,7 +104,7 @@ public class Suggester
 			nonReactomeInstanceEdits.parallelStream().forEach( ie -> suggestedInstanceEdits.add(ie.toString()) );
 			pathways.addAll(getPathways(nonReactomeInstanceEdits));
 		}
-		
+
 
 		if (!pathways.isEmpty())
 		{
@@ -117,13 +116,13 @@ public class Suggester
 				rleMapToInstanceEdits.put(this.rle.getUnderlyingInstance().toString(), suggestedInstanceEdits);
 				s.setRlesToInstanceEdits(rleMapToInstanceEdits);
 				suggestions.add(s);
-			}	
+			}
 		}
 		return suggestions;
 	}
 
 	/**
-	 * Gets a set of pathways for this suggester's RLE that do not have "new" InstanceEdits. 
+	 * Gets a set of pathways for this suggester's RLE that do not have "new" InstanceEdits.
 	 * @param newInstanceEdits
 	 * @return
 	 */
