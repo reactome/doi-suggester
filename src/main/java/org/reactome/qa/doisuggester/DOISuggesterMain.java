@@ -40,21 +40,15 @@ public class DOISuggesterMain
 		String pathToConfig = Paths.get("src", "main", "resources", "config.properties").toString();
 		try(FileInputStream fis = new FileInputStream(pathToConfig))
 		{
-			String username;
-			String password;
-			String database;
-			String databasePrev;
-			String host;
-			int port;
 			MandatoryProperties props = new MandatoryProperties();
 			props.load(fis);
 
-			username = props.getMandatoryProperty("automatedDOIs.user");
-			password = props.getMandatoryProperty("automatedDOIs.password");
-			database = props.getMandatoryProperty("automatedDOIs.dbName");
-			databasePrev = props.getMandatoryProperty("automatedDOIs.prevDbName");
-			host = props.getMandatoryProperty("automatedDOIs.host");
-			port = Integer.valueOf(props.getMandatoryProperty("automatedDOIs.port"));
+			String username = props.getMandatoryProperty("automatedDOIs.user");
+			String password = props.getMandatoryProperty("automatedDOIs.password");
+			String database = props.getMandatoryProperty("automatedDOIs.dbName");
+			String databasePrev = props.getMandatoryProperty("automatedDOIs.prevDbName");
+			String host = props.getMandatoryProperty("automatedDOIs.host");
+			int port = Integer.parseInt(props.getMandatoryProperty("automatedDOIs.port"));
 			MySQLAdaptor dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 			MySQLAdaptor dbAdaptorPrev = new MySQLAdaptor(host, databasePrev, username, password, port);
 			Collection<GKInstance> reactionLikeEvents = (Collection<GKInstance>) dbAdaptor.fetchInstancesByClass(ReactomeJavaConstants.ReactionlikeEvent);

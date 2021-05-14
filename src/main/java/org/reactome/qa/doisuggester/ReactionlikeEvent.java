@@ -277,7 +277,7 @@ public class ReactionlikeEvent
 	 * This method gets the ancestors of a pathway/RLE that is furthest up the tree and also does not have the same InstanceEdit.
 	 * @param A pathway to examine.
 	 * @param newInstanceEdit the InstanceEdit to check for.
-	 * @return
+	 * @return The pathway objects.
 	 */
 	private Set<GKInstance> getFurthestAncestorWithoutNewInstanceEdit(GKInstance pathway, GKInstance newInstanceEdit)
 	{
@@ -301,8 +301,8 @@ public class ReactionlikeEvent
 				for (GKInstance parent : parents)
 				{
 					List<GKInstance> parentInstanceEdits = new ArrayList<>();
-					// Ok, technically, the parent object should be a Pathway, and a ReactionelikeEvent
-					// is *not* a sublass of Pathway, but they are both subclasses of Event,
+					// Ok, technically, the parent object should be a Pathway, and a ReactionlikeEvent
+					// is *not* a subclass of Pathway, but they are both subclasses of Event,
 					// and Event has the attributes "authored", "revised", "reviewed", so should work.
 					ReactionlikeEvent parentPathway = new ReactionlikeEvent(parent);
 					parentInstanceEdits.addAll(parentPathway.getAuthoredInstanceEdits());
