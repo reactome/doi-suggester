@@ -85,11 +85,11 @@ public class DOISuggesterMain
 						for (String rleKey : s.getRlesToInstanceEdits().keySet())
 						{
 							String instanceEdits = s.getRlesToInstanceEdits().get(rleKey).stream().reduce("", (prev, instEd) -> prev + " | " + instEd );
-							List<String> record = new ArrayList<>();
-							record.add(pathway);
-							record.add(rleKey);
-							record.add(instanceEdits);
-							records.add(record);
+							List<String> pathwayRecord = new ArrayList<>();
+							pathwayRecord.add(pathway);
+							pathwayRecord.add(rleKey);
+							pathwayRecord.add(instanceEdits);
+							records.add(pathwayRecord);
 							rleCountsForPathways.put(pathway, rleCountsForPathways.get(pathway) + 1);
 						}
 					}
@@ -164,9 +164,9 @@ public class DOISuggesterMain
 					return compareResult;
 				};
 
-			for (List<String> record : records.stream().sorted(recordComparator).collect(Collectors.toList()))
+			for (List<String> pathwayRecord : records.stream().sorted(recordComparator).collect(Collectors.toList()))
 			{
-				printer.printRecord(record.get(pathwayIndex), record.get(rleIndex), record.get(instanceEditIndex));
+				printer.printRecord(pathwayRecord.get(pathwayIndex), pathwayRecord.get(rleIndex), pathwayRecord.get(instanceEditIndex));
 			}
 		}
 	}
