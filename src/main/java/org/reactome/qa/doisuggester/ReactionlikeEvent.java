@@ -282,7 +282,6 @@ public class ReactionlikeEvent
 	 */
 	private Set<GKInstance> getFurthestAncestorWithoutNewInstanceEdit(GKInstance pathway, GKInstance newInstanceEdit)
 	{
-//		GKInstance pathToReturn = null;
 		try
 		{
 			List<GKInstance> parents = (List<GKInstance>) pathway.getReferers(ReactomeJavaConstants.hasEvent);
@@ -291,7 +290,6 @@ public class ReactionlikeEvent
 				// If we somehow get to the root level where there are no more parents,
 				// just return this pathway. Probably not going to happen, but it's
 				// probably a good idea to have this base case anyway.
-//				pathToReturn =  pathway;
 				this.ancestors.add(pathway);
 			}
 			else
@@ -330,10 +328,6 @@ public class ReactionlikeEvent
 					{
 						// A pathway that does not have the "new" instanceEdit is the sort of pathway we're interested in
 						// so add it to the list of ancestors that will be returned.
-						// I think "parent" should have gone here, but I think "pathway" makes the output resemble more closely Justin's output.
-//						this.ancestors.add(pathway);
-//						this.ancestors.add(parent);
-
 						// If pathway != this.rle, add pathway, otherwise, add parent.
 						if (pathway.getDBID().equals(this.rle.getDBID()))
 						{
