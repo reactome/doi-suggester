@@ -1,5 +1,6 @@
 package org.reactome.qa.doisuggester;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -7,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.gk.model.GKInstance;
+import org.gk.model.ReactomeJavaConstants;
+import org.gk.schema.InvalidAttributeException;
 
 /**
  * An object that makes a DOI suggestion about an RLE
@@ -86,7 +89,7 @@ public class Suggester
 		// Handle RLEs that exist in previous versions of Reactome.
 		if (!this.rle.isNewRLE())
 		{
-			List<GKInstance> newInstanceEdits = ReactionlikeEvent.filterForNonReactomeInstanceEdits(this.rle.getNewInstanceEdits());
+			List<GKInstance> newInstanceEdits = Suggester.filterForNonReactomeInstanceEdits(this.rle.getNewInstanceEdits());
 			// IF an RLE has "new" InstanceEdits, we may have to make a DOI suggestion.
 			if (!newInstanceEdits.isEmpty())
 			{
@@ -100,7 +103,7 @@ public class Suggester
 			List<GKInstance> instanceEdits = this.rle.getAuthoredInstanceEdits();
 			instanceEdits.addAll(this.rle.getReviewedInstanceEdits());
 			instanceEdits.addAll(this.rle.getRevisedInstanceEdits());
-			List<GKInstance> nonReactomeInstanceEdits = ReactionlikeEvent.filterForNonReactomeInstanceEdits(instanceEdits);
+			List<GKInstance> nonReactomeInstanceEdits = Suggester.filterForNonReactomeInstanceEdits(instanceEdits);
 			nonReactomeInstanceEdits.parallelStream().forEach( ie -> suggestedInstanceEdits.add(ie.toString()) );
 			pathways.addAll(getPathways(nonReactomeInstanceEdits));
 		}
@@ -138,5 +141,57 @@ public class Suggester
 			}
 		}
 		return pathways;
+	}
+
+	/**
+	 * Filters a list of InstanceEdits such that only "non-Reactome" InstanceEdits are returned.
+	 * And InstanceEdits is considered to be "non-Reactome" if at least one author of the InstanceEdit is not
+	 * a member of the Reactome project.
+	 * @param instanceEdits
+	 * @return A list of InstanceEdits that are "non-Reactome". It will be a subset of instanceEdits.
+	 */
+	private static List<GKInstance> filterForNonReactomeInstanceEdits(List<GKInstance> instanceEdits)
+	{
+		List<GKInstance> nonReactomeInstanceEdits = new ArrayList<>();
+
+		try
+		{
+			// For an InstanceEdit to be considered non-Reactome, there must exist at least one author whose project is
+			// not "Reactome"
+			for (GKInstance instanceEdit : instanceEdits)
+			{
+				List<GKInstance> authors = instanceEdit.getAttributeValuesList(ReactomeJavaConstants.author);
+				if (authors != null && !authors.isEmpty())
+				{
+					int i = 0;
+					boolean isNonReactome = false;
+					while (!isNonReactome && i < authors.size())
+					{
+						GKInstance author = authors.get(i);
+						// TODO: Notify Guanming that "project" is not in ReactomeJavaConstants.
+						String project = (String) author.getAttributeValue("project");
+						if (project == null || project.trim().equals("") || !project.trim().equalsIgnoreCase("reactome") )
+						{
+							isNonReactome = true;
+							nonReactomeInstanceEdits.add(instanceEdit);
+						}
+						i++;
+					}
+				}
+//				else
+//				{
+//					// Log a warning about an InstanceEdit with NO authors - there's probably some data cleanup that needs to happen.
+//				}
+			}
+		}
+		catch (InvalidAttributeException e)
+		{
+			e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		return nonReactomeInstanceEdits;
 	}
 }

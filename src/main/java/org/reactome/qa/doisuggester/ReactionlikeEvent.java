@@ -195,58 +195,6 @@ public class ReactionlikeEvent
 	}
 
 	/**
-	 * Filters a list of InstanceEdits such that only "non-Reactome" InstanceEdits are returned.
-	 * And InstanceEdits is considered to be "non-Reactome" if at least one author of the InstanceEdit is not
-	 * a member of the Reactome project.
-	 * @param instanceEdits
-	 * @return A list of InstanceEdits that are "non-Reactome". It will be a subset of instanceEdits.
-	 */
-	public static List<GKInstance> filterForNonReactomeInstanceEdits(List<GKInstance> instanceEdits)
-	{
-		List<GKInstance> nonReactomeInstanceEdits = new ArrayList<>();
-
-		try
-		{
-			// For an InstanceEdit to be considered non-Reactome, there must exist at least one author whose project is
-			// not "Reactome"
-			for (GKInstance instanceEdit : instanceEdits)
-			{
-				List<GKInstance> authors = instanceEdit.getAttributeValuesList(ReactomeJavaConstants.author);
-				if (authors != null && !authors.isEmpty())
-				{
-					int i = 0;
-					boolean isNonReactome = false;
-					while (!isNonReactome && i < authors.size())
-					{
-						GKInstance author = authors.get(i);
-						// TODO: Notify Guanming that "project" is not in ReactomeJavaConstants.
-						String project = (String) author.getAttributeValue("project");
-						if (project == null || project.trim().equals("") || !project.trim().equalsIgnoreCase("reactome") )
-						{
-							isNonReactome = true;
-							nonReactomeInstanceEdits.add(instanceEdit);
-						}
-						i++;
-					}
-				}
-//				else
-//				{
-//					// Log a warning about an InstanceEdit with NO authors - there's probably some data cleanup that needs to happen.
-//				}
-			}
-		}
-		catch (InvalidAttributeException e)
-		{
-			e.printStackTrace();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		return nonReactomeInstanceEdits;
-	}
-
-	/**
 	 * Gets the furthest ancestors of this Reaction-like event which does not have newInstanceEdit as one of its InstanceEdits.
 	 * This method will perform a recursive search from a reaction-like event up to a top-level pathway, searching for a pathway that
 	 * does not have a "new" InstanceEdit. A set of all such pathways is returned.
@@ -280,14 +228,9 @@ public class ReactionlikeEvent
 		try
 		{
 			List<GKInstance> parents = (List<GKInstance>) pathway.getReferers(ReactomeJavaConstants.hasEvent);
-			if (parents == null || parents.isEmpty() )
-			{
-				// If we somehow get to the root level where there are no more parents,
-				// just return this pathway. Probably not going to happen, but it's
-				// probably a good idea to have this base case anyway.
-				this.ancestors.add(pathway);
-			}
-			else
+			// Only proceed if there are valid parents. If there are no valid parents, then don't do anything because
+			// this process only makes sense if pathway has parents.
+			if (! (parents == null || parents.isEmpty()) )
 			{
 				// There are a few ReactionlikeEvents that are referred to by multiple Pathways via hasEvent...
 				// For example, R-HSA-349426 ("Phosphorylation of MDM4 by CHEK2") is in both "Stabilization of p53"
