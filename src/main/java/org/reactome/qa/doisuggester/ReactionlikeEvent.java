@@ -238,10 +238,11 @@ public class ReactionlikeEvent
 						i++;
 					}
 				}
-//				else
-//				{
-//					// Log a warning about an InstanceEdit with NO authors - there's probably some data cleanup that needs to happen.
-//				}
+				else
+				{
+					//there's probably some data cleanup that needs to happen.
+					logger.warn("An InstanceEdit ({}) has no authors! This probably should not have happened - maybe some data cleanup is necessary?", instanceEdit.toString());
+				}
 			}
 		}
 		catch (InvalidAttributeException e)
