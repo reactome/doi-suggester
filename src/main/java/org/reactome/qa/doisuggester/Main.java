@@ -24,6 +24,13 @@ import org.reactome.util.general.MandatoryProperties;
 import org.reactome.util.general.MandatoryProperties.PropertyHasNoValueException;
 import org.reactome.util.general.MandatoryProperties.PropertyNotPresentException;
 
+/**
+ * A cleaned-up version of Justin's original code.
+ * @deprecated This code remains (for now) only to compare output from the new implementation to this implementation.
+ * This class should probably be removed, eventually.
+ * @author sshorser
+ *
+ */
 public class Main
 {
 	public static void main(String[] args) throws FileNotFoundException, IOException
@@ -64,10 +71,10 @@ public class Main
 				{
 
 					GKInstance previousRLE = dbAdaptorPrev.fetchInstance(currentRLE.getDBID());
-					// If no previous version of the RLE, add it to the New RLE list (to be processed later). 
+					// If no previous version of the RLE, add it to the New RLE list (to be processed later).
 					if (previousRLE == null)
 					{
-						// An RLE is "new" if there is no equivalent RLE in the previous database AND if it is referred to by a "hasEvent" attribute of another object. 
+						// An RLE is "new" if there is no equivalent RLE in the previous database AND if it is referred to by a "hasEvent" attribute of another object.
 						if (currentRLE.getReferers(ReactomeJavaConstants.hasEvent) != null)
 						{
 							newRLEs.add(currentRLE);
@@ -80,7 +87,7 @@ public class Main
 					{
 						pathway2Reactions2NewIEs = processPreexistingRLEs(pathway2Reactions2NewIEs, currentRLE, previousRLE);
 					}
-					
+
 				}
 			}
 
@@ -187,9 +194,9 @@ public class Main
 
 	private static Map<GKInstance, Set<Map<GKInstance, GKInstance>>> processNewRLEs(Set<GKInstance> newRLEs, Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs) throws Exception
 	{
-		
+
 		Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwaysMap = pathway2Reactions2NewIEs;
-		
+
 		// For cases where this the first Release that a RlE has appeared (ie. fetching
 		// for the RlE in the previous DB returned null).
 
@@ -410,7 +417,7 @@ public class Main
 
 		// Check the 'authored' lists.
 		newInstanceEdits.addAll(findNewInstanceEdits(currentRLE, currentRLEAuthoredInstances, previousRLEAuthoredInstances, "Authored"));
-		
+
 		// Check the 'revised' lists.
 		newInstanceEdits.addAll(findNewInstanceEdits(currentRLE, currentRLERevisedInstances, previousRLERevisedInstances, "Revised"));
 
@@ -423,7 +430,7 @@ public class Main
 	private static List<GKInstance> findNewInstanceEdits(GKInstance currentRLE, List<GKInstance> currentRLEInstances, List<GKInstance> previousRLEInstances, String listType)
 	{
 		List<GKInstance> newInstanceEdits = new ArrayList<>();
-		
+
 		for (int i = 0; i < currentRLEInstances.size(); i++)
 		{
 			GKInstance currentIE = currentRLEInstances.get(i);
