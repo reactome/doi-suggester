@@ -203,14 +203,13 @@ public class ReactionlikeEvent
 	 */
 	public Set<GKInstance> getFurthestAncestorsWithoutNewInstanceEdit(GKInstance newInstanceEdit)
 	{
-		List<GKInstance> parents;
 		try
 		{
 			this.ancestors.addAll(this.getFurthestAncestorWithoutNewInstanceEdit(this.getUnderlyingInstance(), newInstanceEdit));
 		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
+			// TODO log/handle this properly in future PR
 			e.printStackTrace();
 		}
 		return this.ancestors;
@@ -219,15 +218,15 @@ public class ReactionlikeEvent
 	/**
 	 * Private recursive method to search up the Pathway hierarchy.
 	 * This method gets the ancestors of a pathway/RLE that is furthest up the tree and also does not have the same InstanceEdit.
-	 * @param A pathway to examine.
+	 * @param event A pathway or RLE to examine. Remember: Event is a parent-class to ReactionlikeEvent and Pathway.
 	 * @param newInstanceEdit the InstanceEdit to check for.
 	 * @return The pathway objects.
 	 */
-	private Set<GKInstance> getFurthestAncestorWithoutNewInstanceEdit(GKInstance pathway, GKInstance newInstanceEdit)
+	private Set<GKInstance> getFurthestAncestorWithoutNewInstanceEdit(GKInstance event, GKInstance newInstanceEdit)
 	{
 		try
 		{
-			List<GKInstance> parents = (List<GKInstance>) pathway.getReferers(ReactomeJavaConstants.hasEvent);
+			List<GKInstance> parents = (List<GKInstance>) event.getReferers(ReactomeJavaConstants.hasEvent);
 			// Only proceed if there are valid parents. If there are no valid parents, then don't do anything because
 			// this process only makes sense if pathway has parents.
 			if (! (parents == null || parents.isEmpty()) )
@@ -261,32 +260,31 @@ public class ReactionlikeEvent
 						}
 						i++;
 					}
-
 					if (!instanceEditFound)
 					{
 						// A pathway that does not have the "new" instanceEdit is the sort of pathway we're interested in
 						// so add it to the list of ancestors that will be returned.
 						// If pathway != this.rle, add pathway, otherwise, add parent.
-						if (pathway.getDBID().equals(this.rle.getDBID()))
+						if (event.getDBID().equals(this.rle.getDBID()))
 						{
 							this.ancestors.add(parent);
 						}
 						else
 						{
-							this.ancestors.add(pathway);
-
+							this.ancestors.add(event);
 						}
-
 					}
 				}
 			}
 		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
+			// event.getReferers(ReactomeJavaConstants.hasEvent) is probably the only thing that could throw an exception,
+			// but the underlying API throws Exception rather than using more specific custom exceptions...
+			// TODO: Handle this better with proper logging and maybe re-throwing? For a future PR.
 			e.printStackTrace();
 		}
-		//
+
 		return this.ancestors;
 	}
 }
