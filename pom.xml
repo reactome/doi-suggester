@@ -1,20 +1,172 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<groupId>org.reactome</groupId>
 	<artifactId>doi-suggester</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>doi-suggester</name>
+	<packaging>jar</packaging>
+
+	<name>${project.groupId}:${project.artifactId}</name>
+	<description>Suggests which Reactome pathways might need a DOI</description>
+	<url>https://github.com/reactome/doi-suggester</url>
+
+	<organization>
+		<name>Reactome</name>
+		<url>https://reactome.org</url>
+	</organization>
+
+	<!-- To be determined based on dependency software licenses -->
+	<licenses>
+		<license>
+			<name></name>
+			<url></url>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>SolomonShorser-OICR</id>
+			<name>Solomon Shorser</name>
+			<organization>Ontario Institute for Cancer Research</organization>
+			<organizationUrl>https://oicr.on.ca</organizationUrl>
+		</developer>
+	</developers>
+
+	<contributors>
+		<contributor>
+			<name>Justin Cook</name>
+			<roles>
+				<role>alumni</role>
+			</roles>
+		</contributor>
+	</contributors>
+
+	<scm>
+		<connection>scm:git:git://github.com/reactome/doi-suggester.git</connection>
+		<developerConnection>scm:git:ssh://github.com:reactome/doi-suggester.git</developerConnection>
+		<url>https://github.com/reactome/doi-suggester/tree/master</url>
+	</scm>
+
 	<properties>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
+		<!-- dependencies -->
+		<reactome.release.common.lib.version>1.2.2-SNAPSHOT</reactome.release.common.lib.version>
+
+		<!-- build -->
+		<jdk.version>1.8</jdk.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+		<!-- maven build and plugins -->
+		<maven.compiler.source>${jdk.version}</maven.compiler.source>
+		<maven.compiler.target>${jdk.version}</maven.compiler.target>
+		<maven.gpg.version>1.5</maven.gpg.version>
+		<maven.javadoc.version>2.10.3</maven.javadoc.version>
+		<maven.release.version>2.5.3</maven.release.version>
+		<maven.source.version>2.4</maven.source.version>
+		<nexus-staging-maven-plugin>1.6.7</nexus-staging-maven-plugin>
 	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.reactome.release</groupId>
 			<artifactId>release-common-lib</artifactId>
-			<version>1.2.2-SNAPSHOT</version>
+			<version>${reactome.release.common.lib.version}</version>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<finalName>${project.artifactId}</finalName>
+
+		<plugins>
+			<!-- Nexus staging plugin for Sonatype deployment -->
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>${nexus-staging-maven-plugin}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>ossrh</serverId>
+					<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+					<autoReleaseAfterClose>true</autoReleaseAfterClose>
+				</configuration>
+			</plugin>
+
+			<!-- Generate source jar file -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>${maven.source.version}</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Generate JavaDoc jar file -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${maven.javadoc.version}</version>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Signs deployed jar, source jar, and JavaDoc jar with GPG -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>${maven.gpg.version}</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Allows "release" mvn goal to deploy a SNAPSHOT or version release to Sonatype -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>${maven.release.version}</version>
+				<configuration>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+					<useReleaseProfile>false</useReleaseProfile>
+					<releaseProfiles>release</releaseProfiles>
+					<goals>deploy</goals>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<!-- Configures the distribution to nexus repository -->
+	<distributionManagement>
+		<!-- Sonatype Release repo -->
+		<repository>
+			<id>ossrh</id>
+			<name>Sonatype Release Repository</name>
+			<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2</url>
+		</repository>
+
+		<!-- Sonatype SNAPSHOT repo -->
+		<snapshotRepository>
+			<id>ossrh</id>
+			<name>Sonatype Snapshot Repository</name>
+			<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
 </project>
