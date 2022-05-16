@@ -33,7 +33,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>org.reactome.qa.doisuggester.DOISuggesterMain</mainClass>
+							<mainClass>org.reactome.qa.doisuggester.Main</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
@@ -52,4 +52,10 @@
 			</plugin>
 		</plugins>
 	</build>
+        <repositories>
+		<repository>
+			<id>Sonatype Snapshot</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+	        </repository>
+        </repositories>
 </project>
