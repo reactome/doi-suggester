@@ -7,15 +7,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.gk.model.GKInstance;
 import org.gk.persistence.MySQLAdaptor;
@@ -62,9 +55,8 @@ public class Main
 				// Only check RlEs that are not found in the 'inferredFrom' of any instances.
 				if (currentRLE.getReferers(ReactomeJavaConstants.inferredFrom) == null)
 				{
-
 					GKInstance previousRLE = dbAdaptorPrev.fetchInstance(currentRLE.getDBID());
-					// If no previous version of the RLE, add it to the New RLE list (to be processed later). 
+					// If no previous version of the RLE, add it to the New RLE list (to be processed later).
 					if (previousRLE == null)
 					{
 						// An RLE is "new" if there is no equivalent RLE in the previous database AND if it is referred to by a "hasEvent" attribute of another object. 
@@ -165,17 +157,16 @@ public class Main
 
 							// Since the new IE wasn't found in the immediate parent, check up the Pathway
 							// hierarchy.
-							GKInstance parentPathwayWithRLEInstanceEdit = getGrandparentPathwayWithRLEInstanceEdit(parentPathway, newIE);
+							List<GKInstance> parentPathwaysWithRLEInstanceEdit = getGrandparentPathwayWithRLEInstanceEdit(parentPathway, newIE);
 
-							// If a Pathway with the IE was found, it is added to a map organized as
-							// {pathway => {reaction:newIE}}
-							if (parentPathwayWithRLEInstanceEdit != null)
-							{
-								addPathwayToMap(pathwaysMap, currentRLE, newIE, parentPathwayWithRLEInstanceEdit);
-							}
-							else
-							{
-								addPathwayToMap(pathwaysMap, currentRLE, newIE, parentPathway);
+							for (GKInstance parentPathwayWithRLEInstanceEdit : parentPathwaysWithRLEInstanceEdit) {
+								// If a Pathway with the IE was found, it is added to a map organized as
+								// {pathway => {reaction:newIE}}
+								if (parentPathwayWithRLEInstanceEdit != null) {
+									addPathwayToMap(pathwaysMap, currentRLE, newIE, parentPathwayWithRLEInstanceEdit);
+								} else {
+									addPathwayToMap(pathwaysMap, currentRLE, newIE, parentPathway);
+								}
 							}
 						}
 					}
@@ -228,8 +219,11 @@ public class Main
 						// with it.
 						// Continue looking up the hierarchy to try and find the HIGHEST Pathway with
 						// the IE.
-						GKInstance grandparentPathwayWithRLEInstanceEdit = getGrandparentPathwayWithRLEInstanceEdit(parentPathway, rleIE);
-						addPathwayToMap(pathwaysMap, newRLE, rleIE, grandparentPathwayWithRLEInstanceEdit);
+
+						List<GKInstance> grandparentPathwaysWithRLEInstanceEdit = getGrandparentPathwayWithRLEInstanceEdit(parentPathway, rleIE);
+						for (GKInstance grandparentPathwayWithRLEInstanceEdit : grandparentPathwaysWithRLEInstanceEdit) {
+							addPathwayToMap(pathwaysMap, newRLE, rleIE, grandparentPathwayWithRLEInstanceEdit);
+						}
 					}
 					else
 					{
@@ -294,9 +288,12 @@ public class Main
 				ies.add(rle2newIE.get(rle).getExtendedDisplayName());
 			}
 
-			List<GKInstance> pathwayModifieds = pathway.getAttributeValuesList(ReactomeJavaConstants.modified);
+			if (pathway != null) {
+				List<GKInstance> pathwayModifieds = pathway.getAttributeValuesList(ReactomeJavaConstants.modified);
 
-			System.out.println(pathway + "\t" + pathway2Reactions2NewIEs.get(pathway).size() + "\t" + String.join("|", rles) + "\t" + String.join("|", ies) + "\t" + pathwayModifieds.get((pathwayModifieds.size() - 1)));
+				String pathwayModifications = !pathwayModifieds.isEmpty() ? pathwayModifieds.get((pathwayModifieds.size() - 1)).toString() : "No modification instances";
+				System.out.println(pathway + "\t" + pathway2Reactions2NewIEs.get(pathway).size() + "\t" + String.join("|", rles) + "\t" + String.join("|", ies) + "\t" + pathwayModifications);
+			}
 		}
 	}
 
@@ -330,20 +327,21 @@ public class Main
 		return newInstanceEdit;
 	}
 
-	private static GKInstance getGrandparentPathwayWithRLEInstanceEdit(GKInstance parentPathway, GKInstance newIE) throws Exception
+	private static List<GKInstance> getGrandparentPathwayWithRLEInstanceEdit(GKInstance parentPathway, GKInstance newIE) throws Exception
 	{
-		GKInstance pathway = null;
+		List<GKInstance> pathways = new ArrayList<>();
+
 		List<GKInstance> grandparentPathways = (List<GKInstance>) parentPathway.getReferers(ReactomeJavaConstants.hasEvent);
-		if (grandparentPathways != null)
-		{
+
+		for (GKInstance grandparentPathway : grandparentPathways) {
 			// This never came up in my testing, but if it does, might need to be accounted
 			// for.
-			if (grandparentPathways.size() > 1)
-			{
-				System.out.println("TOO MANY ANCESTORS");
-				System.exit(0);
-			}
-			GKInstance grandparentPathway = grandparentPathways.get(0);
+//			if (grandparentPathways.size() > 1)
+//			{
+//				System.out.println("TOO MANY ANCESTORS for " + parentPathway);
+//				return null;
+//				//System.exit(0);
+//			}
 			List<GKInstance> grandparentPathwayReviewedAuthoredRevisedInstances = grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.reviewed);
 			grandparentPathwayReviewedAuthoredRevisedInstances.addAll(grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.authored));
 			grandparentPathwayReviewedAuthoredRevisedInstances.addAll(grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.revised));
@@ -360,16 +358,16 @@ public class Main
 			{
 				// Pathway has the IE, but might not be the highest level. Recursively check
 				// upwards!
-				pathway = getGrandparentPathwayWithRLEInstanceEdit(grandparentPathway, newIE);
+				pathways.addAll(getGrandparentPathwayWithRLEInstanceEdit(grandparentPathway, newIE));
 			}
 			else
 			{
 				// Pathway does not have the IE, and according to proper rules, that should be
 				// the the highest Pathway, so it is returned.
-				pathway = parentPathway;
+				pathways.add(parentPathway);
 			}
 		}
-		return pathway;
+		return pathways;
 	}
 
 	private static List<GKInstance> getNonReactomeEventIEs(GKInstance event) throws Exception
