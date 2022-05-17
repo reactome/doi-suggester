@@ -270,28 +270,20 @@ public class Main
 		for (Entry<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwayEntry : pathway2Reactions2NewIEs.entrySet())
 		{
 			GKInstance pathway = pathwayEntry.getKey();
-			List<String> rleDbIds = new ArrayList<>();
-			List<String> rleDisplayNames = new ArrayList<>();
-			List<String> ieDbIds = new ArrayList<>();
-			List<String> ieDisplayNames = new ArrayList<>();
 			List<String> rles = new ArrayList<>();
-			List<String> ies = new ArrayList<>();
+			Set<String> ies = new HashSet<>();
 
 			for (Map<GKInstance, GKInstance> rle2newIE : pathwayEntry.getValue())
 			{
-				rleDbIds.add(rle2newIE.keySet().iterator().next().getDBID().toString());
-				rleDisplayNames.add(rle2newIE.keySet().iterator().next().getDisplayName());
 				rles.add(rle2newIE.keySet().iterator().next().getExtendedDisplayName());
 				GKInstance rle = rle2newIE.keySet().iterator().next();
-				ieDbIds.add(rle2newIE.get(rle).getDBID().toString());
-				ieDisplayNames.add(rle2newIE.get(rle).getDisplayName());
 				ies.add(rle2newIE.get(rle).getExtendedDisplayName());
 			}
 
 			if (pathway != null) {
 				List<GKInstance> pathwayModifieds = pathway.getAttributeValuesList(ReactomeJavaConstants.modified);
 
-				String pathwayModifications = !pathwayModifieds.isEmpty() ? pathwayModifieds.get((pathwayModifieds.size() - 1)).toString() : "No modification instances";
+				String pathwayModifications = !pathwayModifieds.isEmpty() ? (pathwayModifieds.get(pathwayModifieds.size() - 1)).toString() : "No modification instances";
 				System.out.println(pathway + "\t" + pathway2Reactions2NewIEs.get(pathway).size() + "\t" + String.join("|", rles) + "\t" + String.join("|", ies) + "\t" + pathwayModifications);
 			}
 		}
