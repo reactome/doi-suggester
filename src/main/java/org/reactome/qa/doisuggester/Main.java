@@ -5,6 +5,7 @@ import org.gk.model.ReactomeJavaConstants;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -27,14 +28,8 @@ public class Main
 			MandatoryProperties props = new MandatoryProperties();
 			props.load(fis);
 
-			String username = props.getMandatoryProperty("automatedDOIs.user");
-			String password = props.getMandatoryProperty("automatedDOIs.password");
-			String database = props.getMandatoryProperty("automatedDOIs.dbName");
-			String databasePrev = props.getMandatoryProperty("automatedDOIs.prevDbName");
-			String host = props.getMandatoryProperty("automatedDOIs.host");
-			int port = Integer.valueOf(props.getMandatoryProperty("automatedDOIs.port"));
-			MySQLAdaptor dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
-			MySQLAdaptor dbAdaptorPrev = new MySQLAdaptor(host, databasePrev, username, password, port);
+			MySQLAdaptor dbAdaptor = getRecentDBAdaptor(props);
+			MySQLAdaptor dbAdaptorPrev = getPreviousDBAdaptor(props);
 
 			Set<GKInstance> newRLEs = new HashSet<>();
 			Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs = new HashMap<>();
@@ -73,7 +68,6 @@ public class Main
 			Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwaysMap = processNewRLEs(newRLEs, pathway2Reactions2NewIEs);
 
 			printOutput(pathwaysMap);
-
 		}
 		catch (PropertyHasNoValueException | PropertyNotPresentException e)
 		{
@@ -85,6 +79,25 @@ public class Main
 		{
 			e.printStackTrace();
 		}
+	}
+
+	private static MySQLAdaptor getRecentDBAdaptor(MandatoryProperties props) throws SQLException {
+		String recentDatabaseName = props.getMandatoryProperty("automatedDOIs.dbName");
+		return getDBAdaptor(props, recentDatabaseName);
+	}
+
+	private static MySQLAdaptor getPreviousDBAdaptor(MandatoryProperties props) throws SQLException {
+		String previousDatabaseName = props.getMandatoryProperty("automatedDOIs.prevDbName");
+		return getDBAdaptor(props, previousDatabaseName);
+	}
+
+	private static MySQLAdaptor getDBAdaptor(MandatoryProperties props, String dbName) throws SQLException {
+		String username = props.getMandatoryProperty("automatedDOIs.user");
+		String password = props.getMandatoryProperty("automatedDOIs.password");
+		String host = props.getMandatoryProperty("automatedDOIs.host");
+		int port = Integer.valueOf(props.getMandatoryProperty("automatedDOIs.port"));
+
+		return new MySQLAdaptor(host, dbName, username, password, port);
 	}
 
 	private static Map<GKInstance, Set<Map<GKInstance, GKInstance>>> processPreexistingRLEs(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs, GKInstance currentRLE, GKInstance previousRLE) throws InvalidAttributeException, Exception
