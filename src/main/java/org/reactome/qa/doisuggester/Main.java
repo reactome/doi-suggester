@@ -321,10 +321,16 @@ public class Main
 
 	private static List<GKInstance> getGrandparentPathwayWithRLEInstanceEdit(GKInstance parentPathway, GKInstance newIE) throws Exception
 	{
-		List<GKInstance> pathways = new ArrayList<>();
 
 		List<GKInstance> grandparentPathways = (List<GKInstance>) parentPathway.getReferers(ReactomeJavaConstants.hasEvent);
 
+		if (grandparentPathways == null) {
+			System.err.println(parentPathway + " has no parent pathway.  " +
+				"Returning an empty list for grandparent pathways");
+			return new ArrayList<>();
+		}
+
+		List<GKInstance> pathways = new ArrayList<>();
 		for (GKInstance grandparentPathway : grandparentPathways) {
 			// This never came up in my testing, but if it does, might need to be accounted
 			// for.
