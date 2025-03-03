@@ -387,7 +387,13 @@ public class Main
 			// 'project' is single-value variable
 			// TODO: Iterate through all authors
 			GKInstance personInst = (GKInstance) ie.getAttributeValue(ReactomeJavaConstants.author);
-			String projectText = (String) personInst.getAttributeValue("project");
+			if (personInst == null) {
+				System.err.println("Warning: Instance edit without an author: " + ie);
+			}
+
+			String projectText = personInst != null ?
+				(String) personInst.getAttributeValue("project") :
+				"";
 			if (projectText == null || !projectText.equals("Reactome"))
 			{
 				newNonReactomeInstanceEdits.add(ie);
