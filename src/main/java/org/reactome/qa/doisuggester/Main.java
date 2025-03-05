@@ -20,7 +20,7 @@ import org.reactome.util.general.MandatoryProperties.PropertyHasNoValueException
 import org.reactome.util.general.MandatoryProperties.PropertyNotPresentException;
 
 public class Main {
-	private static Logger logger = LogManager.getLogger();
+	private static Logger logger = LogManager.getLogger(Main.class);
 
 	public static void main(String[] args) throws FileNotFoundException, IOException {
 		logger.info("Checking for RLEs that might need a DOI...");
