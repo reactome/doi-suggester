@@ -1,5 +1,7 @@
 package org.reactome.qa.doisuggester;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.gk.model.ReactomeJavaConstants;
 
 import java.io.FileInputStream;
@@ -17,11 +19,11 @@ import org.reactome.util.general.MandatoryProperties;
 import org.reactome.util.general.MandatoryProperties.PropertyHasNoValueException;
 import org.reactome.util.general.MandatoryProperties.PropertyNotPresentException;
 
-public class Main
-{
-	public static void main(String[] args) throws FileNotFoundException, IOException
-	{
-		System.out.println("Checking for RLEs that might need a DOI...");
+public class Main {
+	private static Logger logger = LogManager.getLogger();
+
+	public static void main(String[] args) throws FileNotFoundException, IOException {
+		logger.info("Checking for RLEs that might need a DOI...");
 		String pathToConfig = Paths.get("src", "main", "resources", "config.properties").toString();
 		String username;
 		String password;
@@ -29,8 +31,7 @@ public class Main
 		String databasePrev;
 		String host;
 		int port;
-		try(FileInputStream fis = new FileInputStream(pathToConfig))
-		{
+		try(FileInputStream fis = new FileInputStream(pathToConfig)) {
 			MandatoryProperties props = new MandatoryProperties();
 			props.load(fis);
 
@@ -43,36 +44,34 @@ public class Main
 			MySQLAdaptor dbAdaptor = new MySQLAdaptor(host, database, username, password, port);
 			MySQLAdaptor dbAdaptorPrev = new MySQLAdaptor(host, databasePrev, username, password, port);
 
+
+			logger.info(String.format("Current database is %s (version %d)",
+				database, dbAdaptor.getReleaseNumber()));
+			logger.info(String.format("Previous database is %s (version %d)",
+				databasePrev, dbAdaptorPrev.getReleaseNumber()));
 			Set<GKInstance> newRLEs = new HashSet<>();
 			Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs = new HashMap<>();
 
 			// Iterate through all ReactionlikeEvents (RlEs) in the 'current' test_reactome
 			Collection<GKInstance> RLEs = (Collection<GKInstance>) dbAdaptor.fetchInstancesByClass(ReactomeJavaConstants.ReactionlikeEvent);
-			System.out.println(RLEs.size() + " Reaction-like events will be checked.");
-			for (GKInstance currentRLE : RLEs)
-			{
+			logger.info(RLEs.size() + " Reaction-like events will be checked.");
+			for (GKInstance currentRLE : RLEs) {
 
 				// Only check RlEs that are not found in the 'inferredFrom' of any instances.
-				if (currentRLE.getReferers(ReactomeJavaConstants.inferredFrom) == null)
-				{
+				if (currentRLE.getReferers(ReactomeJavaConstants.inferredFrom) == null) {
 					GKInstance previousRLE = dbAdaptorPrev.fetchInstance(currentRLE.getDBID());
 					// If no previous version of the RLE, add it to the New RLE list (to be processed later).
-					if (previousRLE == null)
-					{
+					if (previousRLE == null) {
 						// An RLE is "new" if there is no equivalent RLE in the previous database AND if it is referred to by a "hasEvent" attribute of another object. 
-						if (currentRLE.getReferers(ReactomeJavaConstants.hasEvent) != null)
-						{
+						if (currentRLE.getReferers(ReactomeJavaConstants.hasEvent) != null) {
 							newRLEs.add(currentRLE);
 						}
 						// New RLEs have their own logic below, so skip the current loop that deals with
 						// existing RlEs.
 //						continue;
-					}
-					else // process RLEs that have prior versions.
-					{
+					} else { // process RLEs that have prior versions.
 						pathway2Reactions2NewIEs = processPreexistingRLEs(pathway2Reactions2NewIEs, currentRLE, previousRLE);
 					}
-					
 				}
 			}
 
@@ -80,31 +79,22 @@ public class Main
 
 			printOutput(pathwaysMap);
 
-		}
-		catch (PropertyHasNoValueException | PropertyNotPresentException e)
-		{
-			System.err.println("Your properties file appears to be misconfigured: " + e.getMessage());
+		} catch (PropertyHasNoValueException | PropertyNotPresentException e) {
+			logger.fatal("Your properties file appears to be misconfigured: " + e.getMessage());
 			e.printStackTrace();
 			System.exit(-1);
-		}
-		catch (SQLException e)
-		{
+		} catch (SQLException e) {
 			e.printStackTrace();
-		}
-		catch (InvalidAttributeException e)
-		{
+		} catch (InvalidAttributeException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	private static Map<GKInstance, Set<Map<GKInstance, GKInstance>>> processPreexistingRLEs(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs, GKInstance currentRLE, GKInstance previousRLE) throws InvalidAttributeException, Exception
-	{
+	private static Map<GKInstance, Set<Map<GKInstance, GKInstance>>> processPreexistingRLEs(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs, GKInstance currentRLE, GKInstance previousRLE) throws InvalidAttributeException, Exception {
 		Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwaysMap = pathway2Reactions2NewIEs;
 		// Get all reviewed, authored, and revised values from the current and previous
 		// version of the RlE.
@@ -118,16 +108,14 @@ public class Main
 		// Check if any of those attributes have a new instance edit
 		if (hasNewInstanceEdit(currentRLEReviewedInstances, previousRLEReviewedInstances)
 			|| hasNewInstanceEdit(currentRLEAuthoredInstances, previousRLEAuthoredInstances)
-			|| hasNewInstanceEdit(currentRLERevisedInstances, previousRLERevisedInstances))
-		{
+			|| hasNewInstanceEdit(currentRLERevisedInstances, previousRLERevisedInstances)) {
 
 			// Filter out any instance edits (IE) created by someone from Reactome.
 			// This is because Pathways are only officially considered updated once they are
 			// reviewed by an external person.
 			List<GKInstance> newInstanceEdits = getNewNonReactomeInstanceEdits(currentRLE, currentRLEReviewedInstances, currentRLEAuthoredInstances, currentRLERevisedInstances, previousRLEReviewedInstances, previousRLEAuthoredInstances, currentRLERevisedInstances);
 
-			if (!newInstanceEdits.isEmpty())
-			{
+			if (!newInstanceEdits.isEmpty()) {
 				// Now it will check the immediate parent Pathway of the RlE to see if the new
 				// IE exists there.
 				// If it is not found, it will continue to check up the Pathway hierarchy to see
@@ -139,21 +127,16 @@ public class Main
 				parentPathwayReviewedAuthoredRevisedInstances.addAll(parentPathway.getAttributeValuesList(ReactomeJavaConstants.authored));
 				parentPathwayReviewedAuthoredRevisedInstances.addAll(parentPathway.getAttributeValuesList(ReactomeJavaConstants.revised));
 
-				for (GKInstance newIE : newInstanceEdits)
-				{
-					for (GKInstance parentPathwayIE : parentPathwayReviewedAuthoredRevisedInstances)
-					{
+				for (GKInstance newIE : newInstanceEdits) {
+					for (GKInstance parentPathwayIE : parentPathwayReviewedAuthoredRevisedInstances) {
 
 						// At time of writing, no 'existing' RlEs have a new IE in the immediate parent
 						// when using
 						// 'test_slice_20210118' as the current DB, and 'slice_previous_as_74' as the
 						// previous DB.
-						if (hasRLEInstanceEdit(newIE, parentPathwayIE))
-						{
-							System.out.println("This IE exists in immediate parent Pathway");
-						}
-						else
-						{
+						if (hasRLEInstanceEdit(newIE, parentPathwayIE)) {
+							logger.info("This IE {} exists in immediate parent Pathway", newIE);
+						} else {
 
 							// Since the new IE wasn't found in the immediate parent, check up the Pathway
 							// hierarchy.
@@ -176,8 +159,7 @@ public class Main
 		return pathwaysMap;
 	}
 
-	private static Map<GKInstance, Set<Map<GKInstance, GKInstance>>> processNewRLEs(Set<GKInstance> newRLEs, Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs) throws Exception
-	{
+	private static Map<GKInstance, Set<Map<GKInstance, GKInstance>>> processNewRLEs(Set<GKInstance> newRLEs, Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs) throws Exception {
 		
 		Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwaysMap = pathway2Reactions2NewIEs;
 		
@@ -185,16 +167,14 @@ public class Main
 		// for the RlE in the previous DB returned null).
 
 		// As before, iterate through all RlEs.
-		for (GKInstance newRLE : newRLEs)
-		{
+		for (GKInstance newRLE : newRLEs) {
 			// Get non-Reactome IEs from the revised, authored, and reviewed attributes.
 			List<GKInstance> newRLEInstanceEdits = getNonReactomeEventIEs(newRLE);
 
 			// Look through all parents of the RlE, trying to find the new instance edit in
 			// any of their revised, authored, or reviewed attributes.
 			List<GKInstance> parentPathways = (List<GKInstance>) newRLE.getReferers(ReactomeJavaConstants.hasEvent);
-			for (GKInstance parentPathway : parentPathways)
-			{
+			for (GKInstance parentPathway : parentPathways) {
 				// Get all non-Reactome instance edits in the revised, authored, and reviewed
 				// attributes of the Pathway.
 				List<GKInstance> parentPathwayIEs = getNonReactomeEventIEs(parentPathway);
@@ -203,18 +183,14 @@ public class Main
 
 				// Iterate through all new instance edits, trying to find a Pathway containing
 				// them.
-				for (GKInstance rleIE : newRLEInstanceEdits)
-				{
-					for (GKInstance pathwayIE : parentPathwayIEs)
-					{
-						if (rleIE.getDBID().equals(pathwayIE.getDBID()))
-						{
+				for (GKInstance rleIE : newRLEInstanceEdits) {
+					for (GKInstance pathwayIE : parentPathwayIEs) {
+						if (rleIE.getDBID().equals(pathwayIE.getDBID())) {
 							// The parent Pathway contained the IE.
 							hasRLEInstanceEdit = true;
 						}
 					}
-					if (hasRLEInstanceEdit)
-					{
+					if (hasRLEInstanceEdit) {
 						// If it has the new IE, it might be not be the highest Pathway in the hierarchy
 						// with it.
 						// Continue looking up the hierarchy to try and find the HIGHEST Pathway with
@@ -224,9 +200,7 @@ public class Main
 						for (GKInstance grandparentPathwayWithRLEInstanceEdit : grandparentPathwaysWithRLEInstanceEdit) {
 							addPathwayToMap(pathwaysMap, newRLE, rleIE, grandparentPathwayWithRLEInstanceEdit);
 						}
-					}
-					else
-					{
+					} else {
 						addPathwayToMap(pathwaysMap, newRLE, rleIE, parentPathway);
 					}
 				}
@@ -235,25 +209,20 @@ public class Main
 		return pathwaysMap;
 	}
 
-	private static void addPathwayToMap(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwaysMap, GKInstance newRLE, GKInstance rleIE, GKInstance grandparentPathwayWithRLEInstanceEdit)
-	{
+	private static void addPathwayToMap(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwaysMap, GKInstance newRLE, GKInstance rleIE, GKInstance grandparentPathwayWithRLEInstanceEdit) {
 		Map<GKInstance, GKInstance> reaction2newIE = new HashMap<>();
 		reaction2newIE.put(newRLE, rleIE);
 		// If 'Pathway' key exists, add to it
-		if (pathwaysMap.get(grandparentPathwayWithRLEInstanceEdit) != null)
-		{
+		if (pathwaysMap.get(grandparentPathwayWithRLEInstanceEdit) != null) {
 			pathwaysMap.get(grandparentPathwayWithRLEInstanceEdit).add(reaction2newIE);
-		}
-		else
-		{
+		} else {
 			// If 'Pathway' key doesn't exist, create it and then add to it.
 			Set<Map<GKInstance, GKInstance>> reaction2newIESet = new HashSet<>(Arrays.asList(reaction2newIE));
 			pathwaysMap.put(grandparentPathwayWithRLEInstanceEdit, reaction2newIESet);
 		}
 	}
 
-	private static void printOutput(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs) throws InvalidAttributeException, Exception
-	{
+	private static void printOutput(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs) throws InvalidAttributeException, Exception {
 		// At this point in the program you have an HashMap object that has the format
 		// {Pathway => [{ReactionlikeEvent : InstanceEdit}]}
 		// This will now be output in the report style that has been shared in the
@@ -264,17 +233,21 @@ public class Main
 		// - automatedDOIs.dbName=test_slice_20210118
 		// - automatedDOIs.prevDbName=slice_previous_as_74
 
-		System.out.println(pathway2Reactions2NewIEs.keySet().size() + " DOI suggestions");
+		logger.info(pathway2Reactions2NewIEs.keySet().size() + " DOI suggestions");
 		// TODO: Replace this with proper CSV output to file.
-		System.out.println("PathwayToBeUpdated\tUpdatedReactionsCount\tUpdatedReactions\tNewInstanceEdits\tMostRecentModified");
-		for (Entry<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwayEntry : pathway2Reactions2NewIEs.entrySet())
-		{
+		System.out.println(String.join("\t",
+			"PathwayToBeUpdated",
+			"UpdatedReactionsCount",
+			"UpdatedReactions",
+			"NewInstanceEdits",
+			"MostRecentModified"
+		));
+		for (Entry<GKInstance, Set<Map<GKInstance, GKInstance>>> pathwayEntry : pathway2Reactions2NewIEs.entrySet()) {
 			GKInstance pathway = pathwayEntry.getKey();
 			List<String> rles = new ArrayList<>();
 			Set<String> ies = new HashSet<>();
 
-			for (Map<GKInstance, GKInstance> rle2newIE : pathwayEntry.getValue())
-			{
+			for (Map<GKInstance, GKInstance> rle2newIE : pathwayEntry.getValue()) {
 				rles.add(rle2newIE.keySet().iterator().next().getExtendedDisplayName());
 				GKInstance rle = rle2newIE.keySet().iterator().next();
 				ies.add(rle2newIE.get(rle).getExtendedDisplayName());
@@ -284,33 +257,33 @@ public class Main
 				List<GKInstance> pathwayModifieds = pathway.getAttributeValuesList(ReactomeJavaConstants.modified);
 
 				String pathwayModifications = !pathwayModifieds.isEmpty() ? (pathwayModifieds.get(pathwayModifieds.size() - 1)).toString() : "No modification instances";
-				System.out.println(pathway + "\t" + pathway2Reactions2NewIEs.get(pathway).size() + "\t" + String.join("|", rles) + "\t" + String.join("|", ies) + "\t" + pathwayModifications);
+				System.out.println(String.join("\t",
+					pathway.toString(),
+					String.valueOf(pathway2Reactions2NewIEs.get(pathway).size()),
+					String.join("|", rles),
+					String.join("|", ies),
+					pathwayModifications
+				));
 			}
 		}
 	}
 
-	private static boolean hasNewInstanceEdit(List<GKInstance> currentRLEInstanceEdits, List<GKInstance> previousRLEInstanceEdits)
-	{
+	private static boolean hasNewInstanceEdit(List<GKInstance> currentRLEInstanceEdits, List<GKInstance> previousRLEInstanceEdits) {
 		// start by assuming false and set to true when conditions require it.
 		boolean newInstanceEdit = false;
 		// I guess Justin assumed that if there are more InstanceEdits of the current version of an object, the it *must* be new.
 		// This is *probably* a safe assumption to make.
-		if (currentRLEInstanceEdits.size() != previousRLEInstanceEdits.size())
-		{
+		if (currentRLEInstanceEdits.size() != previousRLEInstanceEdits.size()) {
 			newInstanceEdit = true;
-		}
-		else
-		{
+		} else {
 			int i = 0;
-			while (i < currentRLEInstanceEdits.size() && !newInstanceEdit)
-			{
+			while (i < currentRLEInstanceEdits.size() && !newInstanceEdit) {
 				GKInstance currentIE = currentRLEInstanceEdits.get(i);
 				GKInstance previousIE = previousRLEInstanceEdits.get(i);
 				// It seems that in the case where current and previous versions have the same
 				// number of InstanceEdits, comparing DBIDs indicates if an InstanceEdit is new.
 				// I'm assuming Justin tested this theory more rigorously.
-				if (!currentIE.getDBID().equals(previousIE.getDBID()))
-				{
+				if (!currentIE.getDBID().equals(previousIE.getDBID())) {
 					newInstanceEdit = true;
 				}
 				i++;
@@ -319,13 +292,12 @@ public class Main
 		return newInstanceEdit;
 	}
 
-	private static List<GKInstance> getGrandparentPathwayWithRLEInstanceEdit(GKInstance parentPathway, GKInstance newIE) throws Exception
-	{
+	private static List<GKInstance> getGrandparentPathwayWithRLEInstanceEdit(GKInstance parentPathway, GKInstance newIE) throws Exception {
 
 		List<GKInstance> grandparentPathways = (List<GKInstance>) parentPathway.getReferers(ReactomeJavaConstants.hasEvent);
 
 		if (grandparentPathways == null) {
-			System.err.println(parentPathway + " has no parent pathway.  " +
+			logger.info(parentPathway + " has no parent pathway.  " +
 				"Returning an empty list for grandparent pathways");
 			return new ArrayList<>();
 		}
@@ -344,22 +316,17 @@ public class Main
 			grandparentPathwayReviewedAuthoredRevisedInstances.addAll(grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.authored));
 			grandparentPathwayReviewedAuthoredRevisedInstances.addAll(grandparentPathway.getAttributeValuesList(ReactomeJavaConstants.revised));
 			boolean hasRLEInstanceEdit = false;
-			for (GKInstance grandparentPathwayIE : grandparentPathwayReviewedAuthoredRevisedInstances)
-			{
-				if (newIE.getDBID().equals(grandparentPathwayIE.getDBID()))
-				{
+			for (GKInstance grandparentPathwayIE : grandparentPathwayReviewedAuthoredRevisedInstances) {
+				if (newIE.getDBID().equals(grandparentPathwayIE.getDBID())) {
 					hasRLEInstanceEdit = true;
 				}
 			}
 
-			if (hasRLEInstanceEdit)
-			{
+			if (hasRLEInstanceEdit) {
 				// Pathway has the IE, but might not be the highest level. Recursively check
 				// upwards!
 				pathways.addAll(getGrandparentPathwayWithRLEInstanceEdit(grandparentPathway, newIE));
-			}
-			else
-			{
+			} else {
 				// Pathway does not have the IE, and according to proper rules, that should be
 				// the the highest Pathway, so it is returned.
 				pathways.add(parentPathway);
@@ -368,8 +335,7 @@ public class Main
 		return pathways;
 	}
 
-	private static List<GKInstance> getNonReactomeEventIEs(GKInstance event) throws Exception
-	{
+	private static List<GKInstance> getNonReactomeEventIEs(GKInstance event) throws Exception {
 
 		List<GKInstance> instanceEdits = event.getAttributeValuesList(ReactomeJavaConstants.reviewed);
 		instanceEdits.addAll(event.getAttributeValuesList(ReactomeJavaConstants.authored));
@@ -379,31 +345,27 @@ public class Main
 		return newNonReactomeInstanceEdits;
 	}
 
-	private static List<GKInstance> getNonReactomeIEs(List<GKInstance> instanceEdits) throws InvalidAttributeException, Exception
-	{
+	private static List<GKInstance> getNonReactomeIEs(List<GKInstance> instanceEdits) throws InvalidAttributeException, Exception {
 		List<GKInstance> newNonReactomeInstanceEdits = new ArrayList<>();
-		for (GKInstance ie : instanceEdits)
-		{
+		for (GKInstance ie : instanceEdits) {
 			// 'project' is single-value variable
 			// TODO: Iterate through all authors
 			GKInstance personInst = (GKInstance) ie.getAttributeValue(ReactomeJavaConstants.author);
 			if (personInst == null) {
-				System.err.println("Warning: Instance edit without an author: " + ie);
+				logger.info("Warning: Instance edit without an author: " + ie);
 			}
 
 			String projectText = personInst != null ?
 				(String) personInst.getAttributeValue("project") :
 				"";
-			if (projectText == null || !projectText.equals("Reactome"))
-			{
+			if (projectText == null || !projectText.equals("Reactome")) {
 				newNonReactomeInstanceEdits.add(ie);
 			}
 		}
 		return newNonReactomeInstanceEdits;
 	}
 
-	private static List<GKInstance> getNewNonReactomeInstanceEdits(GKInstance currentRLE, List<GKInstance> currentRLEReviewedInstances, List<GKInstance> currentRLEAuthoredInstances, List<GKInstance> currentRLERevisedInstances, List<GKInstance> previousRLEReviewedInstances, List<GKInstance> previousRLEAuthoredInstances, List<GKInstance> previousRLERevisedInstances) throws Exception
-	{
+	private static List<GKInstance> getNewNonReactomeInstanceEdits(GKInstance currentRLE, List<GKInstance> currentRLEReviewedInstances, List<GKInstance> currentRLEAuthoredInstances, List<GKInstance> currentRLERevisedInstances, List<GKInstance> previousRLEReviewedInstances, List<GKInstance> previousRLEAuthoredInstances, List<GKInstance> previousRLERevisedInstances) throws Exception {
 
 		List<GKInstance> newInstanceEdits = new ArrayList<>();
 
@@ -422,33 +384,25 @@ public class Main
 		return newNonReactomeInstanceEdits;
 	}
 
-	private static List<GKInstance> findNewInstanceEdits(GKInstance currentRLE, List<GKInstance> currentRLEInstances, List<GKInstance> previousRLEInstances, String listType)
-	{
+	private static List<GKInstance> findNewInstanceEdits(GKInstance currentRLE, List<GKInstance> currentRLEInstances, List<GKInstance> previousRLEInstances, String listType) {
 		List<GKInstance> newInstanceEdits = new ArrayList<>();
 		
-		for (int i = 0; i < currentRLEInstances.size(); i++)
-		{
+		for (int i = 0; i < currentRLEInstances.size(); i++) {
 			GKInstance currentIE = currentRLEInstances.get(i);
 			GKInstance previousIE = null;
-			if (previousRLEInstances.size() > i)
-			{
+			if (previousRLEInstances.size() > i) {
 				previousIE = previousRLEInstances.get(i);
-				if (!currentIE.getDBID().equals(previousIE.getDBID()))
-				{
-					System.out.println("\'" + listType + "\' elements between current and previous versions of instance do not line up for " + currentRLE.getExtendedDisplayName());
+				if (!currentIE.getDBID().equals(previousIE.getDBID())) {
+					logger.info("\'" + listType + "\' elements between current and previous versions of instance do not line up for " + currentRLE.getExtendedDisplayName());
 				}
-			}
-			else
-			{
+			} else {
 				newInstanceEdits.add(currentIE);
 			}
 		}
 		return newInstanceEdits;
 	}
 
-	private static boolean hasRLEInstanceEdit(GKInstance newIE, GKInstance parentPathwayIE)
-	{
+	private static boolean hasRLEInstanceEdit(GKInstance newIE, GKInstance parentPathwayIE) {
 		return newIE.getDBID().equals(parentPathwayIE.getDBID());
 	}
-
 }
