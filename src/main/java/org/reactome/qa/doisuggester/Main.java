@@ -61,7 +61,12 @@ public class Main {
 				if (currentRLE.getReferers(ReactomeJavaConstants.inferredFrom) == null) {
 					GKInstance previousRLE = dbAdaptorPrev.fetchInstance(currentRLE.getDBID());
 					// If no previous version of the RLE, add it to the New RLE list (to be processed later).
-					if (previousRLE == null) {
+					if (previousRLE == null || notAnRLE(previousRLE)) {
+						if (previousRLE != null && notAnRLE(previousRLE)) {
+							logger.warn(String.format("Previous instance %s with same dbId as current RLE %s is NOT an RLE",
+								previousRLE.getExtendedDisplayName(), currentRLE.getExtendedDisplayName()));
+						}
+
 						// An RLE is "new" if there is no equivalent RLE in the previous database AND if it is referred to by a "hasEvent" attribute of another object. 
 						if (currentRLE.getReferers(ReactomeJavaConstants.hasEvent) != null) {
 							newRLEs.add(currentRLE);
@@ -92,6 +97,10 @@ public class Main {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	private static boolean notAnRLE(GKInstance potentialRLE) {
+		return !potentialRLE.getSchemClass().isa(ReactomeJavaConstants.ReactionlikeEvent);
 	}
 
 	private static Map<GKInstance, Set<Map<GKInstance, GKInstance>>> processPreexistingRLEs(Map<GKInstance, Set<Map<GKInstance, GKInstance>>> pathway2Reactions2NewIEs, GKInstance currentRLE, GKInstance previousRLE) throws InvalidAttributeException, Exception {
